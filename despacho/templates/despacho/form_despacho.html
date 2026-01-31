@@ -1,0 +1,563 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load execel_filters %}
+
+{% block title %}{{ accion }} Despacho{% endblock %}
+
+{% block extra_css %}
+<style>
+    .excel-container {
+        width: 100%;
+        overflow-x: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .despacho-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .despacho-table th {
+        background: #2c3e50;
+        color: white;
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border: 1px solid #34495e;
+        white-space: nowrap;
+        font-size: 11px;
+        text-transform: uppercase;
+    }
+    
+    .despacho-table th.producto-header {
+        position: sticky;
+        left: 0;
+        z-index: 11;
+        text-align: left;
+        min-width: 200px;
+        background: #34495e;
+    }
+    
+    .despacho-table td {
+        border: 1px solid #ddd;
+        padding: 6px;
+        text-align: center;
+    }
+    
+    .despacho-table td.producto-cell {
+        position: sticky;
+        left: 0;
+        background: #ecf0f1;
+        font-weight: 600;
+        text-align: left;
+        padding-left: 15px;
+        z-index: 5;
+        white-space: nowrap;
+        border-right: 2px solid #bdc3c7;
+    }
+    
+    .despacho-table tbody tr:hover {
+        background: #e8f4f8;
+    }
+    
+    .despacho-table tbody tr:hover td.producto-cell {
+        background: #d5e8ee;
+    }
+    
+    /* Colores por categoría de productos */
+    .categoria-tortas {
+        background: rgba(255, 182, 193, 0.3);
+    }
+    
+    .categoria-tortas:hover {
+        background: rgba(255, 182, 193, 0.5) !important;
+    }
+    
+    .categoria-pasteles {
+        background: rgba(173, 216, 230, 0.3);
+    }
+    
+    .categoria-pasteles:hover {
+        background: rgba(173, 216, 230, 0.5) !important;
+    }
+    
+    /* Diferentes tonos para subcategorías */
+    .producto-blanca { background: rgba(255, 240, 245, 0.5); }
+    .producto-jaleada { background: rgba(255, 228, 225, 0.5); }
+    .producto-moca { background: rgba(255, 218, 185, 0.5); }
+    .producto-selva { background: rgba(230, 230, 250, 0.5); }
+    .producto-tres-leches { background: rgba(240, 255, 240, 0.5); }
+    .producto-maracuya { background: rgba(255, 192, 203, 0.5); }
+    .producto-choco { background: rgba(222, 184, 135, 0.5); }
+    
+    .cantidad-input {
+        width: 70px;
+        padding: 6px;
+        border: 1px solid #bdc3c7;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    
+    .cantidad-input:focus {
+        outline: none;
+        border-color: #3498db;
+        background: #ebf5fb;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    .cantidad-input.has-value {
+        background: #d5f4e6;
+        border-color: #27ae60;
+        font-weight: 600;
+        color: #27ae60;
+    }
+    
+    .info-general-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .control-buttons {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 20px;
+    }
+    
+    .btn-save-despacho {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 16px;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-save-despacho:hover {
+        background: #229954;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+    }
+    
+    .stats-box {
+        background: #ecf0f1;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 13px;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="fas fa-truck"></i> 
+                {{ accion }} Despacho
+                {% if despacho %}
+                    <span class="text-muted">{{ despacho.numero }}</span>
+                {% endif %}
+            </h2>
+            <p class="text-muted mb-0">Complete los datos del despacho por sucursal</p>
+        </div>
+        <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <form method="post" id="despachoForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Columna Principal (Tabla Excel) -->
+            <div class="col-lg-9">
+                <!-- Información General -->
+                <div class="info-general-card">
+                    <h5 class="mb-3">
+                        <i class="fas fa-info-circle"></i> Información General
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Estado Despacho</label>
+                            {{ form.estado }}
+                            {% if form.estado.errors %}
+                                <div class="text-danger small">{{ form.estado.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Número de Tanda</label>
+                            {{ form.tanda }}
+                            {% if form.tanda.errors %}
+                                <div class="text-danger small">{{ form.tanda.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Chofer</label>
+                            {{ form.chofer }}
+                            {% if form.chofer.errors %}
+                                <div class="text-danger small">{{ form.chofer.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla tipo Excel -->
+                <div class="excel-container">
+                    <table class="despacho-table" id="despachoTable">
+                        <thead>
+                            <tr>
+                                <th class="producto-header">PRODUCTOS</th>
+                                {% for sucursal in sucursales %}
+                                <th data-sucursal-id="{{ sucursal.id }}">{{ sucursal.nombre_sucursal|upper }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos %}
+                            <tr class="categoria-{{ producto.categoria.nombre|lower }}" 
+                                data-producto-id="{{ producto.id }}"
+                                data-categoria="{{ producto.categoria.nombre|lower }}">
+                                
+                                <td class="producto-cell">
+                                    {{ producto.nombre }}
+                                </td>
+                                
+                                {% for sucursal in sucursales %}
+                                <td>
+                                    {% with key=producto.id|stringformat:"s"|add:"_"|add:sucursal.id|stringformat:"s" %}
+                                    <input type="number" 
+                                           class="cantidad-input {% if detalles_existentes|get_item:key %}has-value{% endif %}" 
+                                           min="0" 
+                                           step="1"
+                                           value="{% if detalles_existentes|get_item:key %}{{ detalles_existentes|get_item:key }}{% endif %}"
+                                           name="cantidad_{{ producto.id }}_{{ sucursal.id }}"
+                                           data-producto-id="{{ producto.id }}"
+                                           data-sucursal-id="{{ sucursal.id }}"
+                                           data-producto-nombre="{{ producto.nombre }}"
+                                           data-sucursal-nombre="{{ sucursal.nombre_sucursal }}"
+                                           data-precio="{{ producto.precio_venta }}"
+                                           onchange="updateStats()"
+                                           placeholder="">
+                                    {% endwith %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Columna Lateral (Controles y Stats) -->
+            <div class="col-lg-3">
+                <div class="control-buttons">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-bar"></i> Resumen
+                    </h5>
+                    
+                    <div class="stats-box">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Productos</span>
+                            <span class="stat-value" id="totalProductos">{{ productos.count }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Sucursales</span>
+                            <span class="stat-value">{{ sucursales.count }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Items Despachados</span>
+                            <span class="stat-value text-success" id="totalItems">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Cantidad Total</span>
+                            <span class="stat-value text-primary" id="cantidadTotal">0</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descuento (Bs.)</label>
+                        {{ form.descuento }}
+                    </div>
+
+                    <div class="stats-box mb-3">
+                        <div class="stat-item">
+                            <span class="stat-label">Subtotal</span>
+                            <span class="stat-value" id="subtotalDisplay">Bs. 0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Final</span>
+                            <span class="stat-value text-success" id="totalDisplay">Bs. 0.00</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-save-despacho mb-2">
+                        <i class="fas fa-save"></i> Guardar Despacho
+                    </button>
+                    
+                    <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; text-align: center;">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Guardando...</span>
+        </div>
+        <h5>Guardando despacho...</h5>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let productos = [];
+let sucursales = [];
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando formulario de despacho...');
+    
+    // Cargar datos desde la tabla
+    cargarDatosTabla();
+    
+    // Agregar event listeners
+    agregarEventListeners();
+    
+    // Actualizar estadísticas iniciales
+    updateStats();
+    
+    console.log('✓ Sistema inicializado correctamente');
+});
+
+// Cargar datos de productos y sucursales
+function cargarDatosTabla() {
+    const table = document.getElementById('despachoTable');
+    
+    // Cargar sucursales desde headers
+    const headers = table.querySelectorAll('thead th');
+    sucursales = Array.from(headers).slice(1).map((th, index) => ({
+        id: index,
+        nombre: th.textContent.trim()
+    }));
+    
+    // Cargar productos desde filas
+    const rows = table.querySelectorAll('tbody tr');
+    productos = Array.from(rows).map(row => {
+        const productoId = row.dataset.productoId;
+        const nombre = row.querySelector('.producto-cell').textContent.trim();
+        return {
+            id: productoId,
+            nombre: nombre
+        };
+    });
+    
+    console.log(`✓ Cargados ${productos.length} productos y ${sucursales.length} sucursales`);
+}
+
+// Agregar event listeners a los inputs
+function agregarEventListeners() {
+    // Event listeners para inputs de cantidad
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const value = parseInt(this.value) || 0;
+            if (value > 0) {
+                this.classList.add('has-value');
+            } else {
+                this.classList.remove('has-value');
+            }
+        });
+        
+        input.addEventListener('change', updateStats);
+    });
+    
+    // Event listener para descuento
+    const descuentoInput = document.querySelector('[name="descuento"]');
+    if (descuentoInput) {
+        descuentoInput.addEventListener('input', updateStats);
+        descuentoInput.addEventListener('change', updateStats);
+    }
+    
+    // Event listener para copiar/pegar desde Excel
+    document.addEventListener('paste', handlePaste);
+}
+
+// Actualizar estadísticas
+function updateStats() {
+    let totalItems = 0;
+    let cantidadTotal = 0;
+    let subtotal = 0;
+    
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        const cantidad = parseInt(input.value) || 0;
+        const precio = parseFloat(input.dataset.precio) || 0;
+        
+        if (cantidad > 0) {
+            totalItems++;
+            cantidadTotal += cantidad;
+            subtotal += (cantidad * precio);
+        }
+    });
+    
+    // Aplicar descuento
+    const descuentoInput = document.querySelector('[name="descuento"]');
+    const descuento = descuentoInput ? (parseFloat(descuentoInput.value) || 0) : 0;
+    const total = subtotal - descuento;
+    
+    // Actualizar displays
+    document.getElementById('totalItems').textContent = totalItems;
+    document.getElementById('cantidadTotal').textContent = cantidadTotal;
+    document.getElementById('subtotalDisplay').textContent = 'Bs. ' + subtotal.toFixed(2);
+    document.getElementById('totalDisplay').textContent = 'Bs. ' + total.toFixed(2);
+}
+
+// Manejar pegado desde Excel
+function handlePaste(e) {
+    const activeElement = document.activeElement;
+    
+    if (activeElement.classList.contains('cantidad-input')) {
+        e.preventDefault();
+        
+        const clipboardData = e.clipboardData || window.clipboardData;
+        const pastedData = clipboardData.getData('Text');
+        const rows = pastedData.split('\n').filter(row => row.trim() !== '');
+        
+        let currentInput = activeElement;
+        
+        rows.forEach(row => {
+            const cells = row.split('\t');
+            let tempInput = currentInput;
+            
+            cells.forEach(cell => {
+                if (tempInput) {
+                    const value = cell.trim();
+                    if (value !== '' && !isNaN(value)) {
+                        tempInput.value = value;
+                        if (parseInt(value) > 0) {
+                            tempInput.classList.add('has-value');
+                        }
+                    }
+                    tempInput = tempInput.parentElement.nextElementSibling?.querySelector('.cantidad-input');
+                }
+            });
+            
+            // Mover a la siguiente fila
+            const currentRow = currentInput.closest('tr');
+            const nextRow = currentRow.nextElementSibling;
+            if (nextRow) {
+                const cellIndex = Array.from(currentInput.parentElement.parentElement.children).indexOf(currentInput.parentElement);
+                currentInput = nextRow.children[cellIndex]?.querySelector('.cantidad-input');
+            }
+        });
+        
+        updateStats();
+    }
+}
+
+// Validación antes de enviar
+document.getElementById('despachoForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Verificar que hay al menos un producto con cantidad
+    const hayProductos = Array.from(document.querySelectorAll('.cantidad-input')).some(input => {
+        return parseInt(input.value) || 0 > 0;
+    });
+    
+    if (!hayProductos) {
+        alert('⚠️ Debe agregar al menos un producto con cantidad mayor a 0');
+        return false;
+    }
+    
+    // Mostrar loading
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    
+    // Enviar formulario
+    this.submit();
+});
+
+// Función para copiar toda la tabla
+function copiarTabla() {
+    const table = document.getElementById('despachoTable');
+    let text = '';
+    
+    // Headers
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    text += headers.join('\t') + '\n';
+    
+    // Rows
+    table.querySelectorAll('tbody tr').forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td, .cantidad-input'));
+        const rowData = cells.map(cell => {
+            if (cell.tagName === 'INPUT') {
+                return cell.value || '0';
+            }
+            return cell.textContent.trim();
+        });
+        text += rowData.join('\t') + '\n';
+    });
+    
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✓ Tabla copiada al portapapeles');
+    });
+}
+
+// Atajos de teclado
+document.addEventListener('keydown', function(e) {
+    // Ctrl+S para guardar
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        document.getElementById('despachoForm').dispatchEvent(new Event('submit'));
+    }
+    
+    // Ctrl+C en la tabla para copiar
+    if (e.ctrlKey && e.key === 'c' && document.activeElement.classList.contains('cantidad-input')) {
+        // Permitir copia normal de celda
+    }
+});
+</script>
+{% endblock %}

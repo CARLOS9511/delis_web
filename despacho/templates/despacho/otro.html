@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Pedidos - Sistema de Inventario</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Public+Sans:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --text: #eee;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+        
+        body {
+            font-family: 'Public Sans', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: rgba(22, 33, 62, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Public Sans', sans-serif;
+        }
+        
+        .btn-primary {
+            background: var(--highlight);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #d63651;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #0d2847;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            background: var(--primary);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+        
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        th {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+            color: var(--text);
+            padding: 1rem 0.75rem;
+            text-align: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.75rem;
+            border-right: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        
+        th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 11;
+            text-align: left;
+            padding-left: 1rem;
+        }
+        
+        tbody tr {
+            transition: background 0.2s;
+        }
+        
+        tbody tr:hover {
+            background: rgba(233, 69, 96, 0.1);
+        }
+        
+        tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        td {
+            padding: 0.75rem;
+            text-align: center;
+            border-right: 1px solid rgba(51, 65, 85, 0.5);
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        
+        td:first-child {
+            position: sticky;
+            left: 0;
+            background: var(--secondary);
+            font-weight: 600;
+            text-align: left;
+            padding-left: 1rem;
+            z-index: 5;
+            border-right: 2px solid var(--border);
+        }
+        
+        tbody tr:hover td:first-child {
+            background: var(--accent);
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            padding: 0.5rem;
+            background: rgba(15, 52, 96, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--highlight);
+            background: rgba(15, 52, 96, 0.8);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+        
+        /* Colores para diferentes categorías de productos */
+        tr[data-category="jaleada"] {
+            background: rgba(251, 191, 36, 0.05);
+        }
+        
+        tr[data-category="moca"] {
+            background: rgba(251, 146, 60, 0.05);
+        }
+        
+        tr[data-category="selva"] {
+            background: rgba(139, 92, 246, 0.05);
+        }
+        
+        tr[data-category="tres-leches"] {
+            background: rgba(167, 243, 208, 0.05);
+        }
+        
+        tr[data-category="maracuya"] {
+            background: rgba(251, 113, 133, 0.05);
+        }
+        
+        tr[data-category="choco"] {
+            background: rgba(120, 113, 108, 0.05);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .instructions {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--info);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            color: var(--text-muted);
+        }
+        
+        .instructions h3 {
+            color: var(--info);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .instructions ul {
+            margin-left: 1.5rem;
+            line-height: 1.8;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Control de Pedidos</h1>
+            <p class="subtitle">Sistema de Gestión de Inventario por Sucursales</p>
+        </header>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones de Uso</h3>
+            <ul>
+                <li><strong>Copiar desde Excel:</strong> Selecciona las celdas en tu hoja de cálculo y presiona Ctrl+C</li>
+                <li><strong>Pegar en la tabla:</strong> Haz clic en la primera celda donde deseas pegar y presiona Ctrl+V</li>
+                <li><strong>Edición manual:</strong> También puedes editar cada celda individualmente</li>
+                <li><strong>Exportar datos:</strong> Usa los botones de abajo para guardar o copiar la información</li>
+            </ul>
+        </div>
+        
+        <div class="controls">
+            <button class="btn-primary" onclick="exportToJSON()">💾 Exportar JSON</button>
+            <button class="btn-secondary" onclick="exportToCSV()">📊 Exportar CSV</button>
+            <button class="btn-success" onclick="copyTableData()">📋 Copiar Todo</button>
+            <button class="btn-secondary" onclick="clearAllData()">🗑️ Limpiar Datos</button>
+        </div>
+        
+        <div class="table-wrapper">
+            <table id="pedidosTable">
+                <thead>
+                    <tr>
+                        <th>PRODUCTOS</th>
+                        <th>BALLIVIAN 1</th>
+                        <th>BALLIVIAN 2</th>
+                        <th>COPACABANA</th>
+                        <th>V. FATIMA 1</th>
+                        <th>CALACOTO</th>
+                        <th>BUENOS AIRES TORTAS</th>
+                        <th>BUENOS AIRES PASTELITOS</th>
+                        <th>VITA 1</th>
+                        <th>VITA 2</th>
+                        <th>AV. BOLIVIA</th>
+                        <th>VILLA ADELA</th>
+                        <th>RIO SECO</th>
+                        <th>EXTRAÑCA</th>
+                        <th>CEJA</th>
+                        <th>SATELITE 1</th>
+                        <th>SATELITE 2</th>
+                        <th>V. DOLORES</th>
+                        <th>16 de JULIO</th>
+                        <th>LIBERTAD</th>
+                        <th>CHACALTAYA</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Las filas se generarán con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Productos</div>
+                <div class="stat-value" id="totalProductos">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sucursales Activas</div>
+                <div class="stat-value">20</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Registros Ingresados</div>
+                <div class="stat-value" id="totalRegistros">0</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Lista de productos del modelo
+        const productos = [
+            'Blanca 30p',
+            'Blanca 20p',
+            'Blanca de 10p',
+            'Jaleada 20p',
+            'Jaleada 10p',
+            'Moca 20p',
+            'Moca 10p',
+            'Selva Negra20p',
+            'Selva Negra 10p',
+            'Tres Leches 20p',
+            'Tres Leches 10p',
+            'Maracuya 20p',
+            'Maracuya 10p',
+            'Chocomoca 20p',
+            'Chocomoca 10p',
+            'Chocodelis 20p',
+            'Chocodelis 10p',
+            'Porcion de Frutas',
+            'Porcion Moca',
+            'Porcion Selva Negra',
+            'Porcion 3 Leches',
+            'Porcion Maracuya',
+            'Porcion chocomooka',
+            'Porcion Chocodelis',
+            'Alfafor',
+            'Copas',
+            'Chesecake vaso',
+            'Mouse Copa',
+            'Mouse entero',
+            'Mil hojas',
+            'Brownie Chocolate',
+            'Brownie  Quinua',
+            'Brownie Maracuya',
+            'Bomba',
+            'Brazo Gitano',
+            'Pie de manzana porc.',
+            'Pie de limon  porc.',
+            'Pie de piña porc.',
+            'Pie de frutas porc.',
+            'Pie de manzana ent.',
+            'Pie de limon ent.',
+            'Pie de piña  ent.',
+            'Pie de frutas ent.',
+            'Conitos',
+            'Cupcakes',
+            'Queque ',
+            'Muffy',
+            'Mini bomba',
+            'Rollo',
+            'Empanadas',
+            'Croisant',
+            'Pan Pizza'
+        ];
+        
+        const sucursales = [
+            'BALLIVIAN 1',
+            'BALLIVIAN 2',
+            'COPACABANA',
+            'V. FATIMA 1',
+            'CALACOTO',
+            'BUENOS AIRES TORTAS',
+            'BUENOS AIRES PASTELITOS',
+            'VITA 1',
+            'VITA 2',
+            'AV. BOLIVIA',
+            'VILLA ADELA',
+            'RIO SECO',
+            'EXTRAÑCA',
+            'CEJA',
+            'SATELITE 1',
+            'SATELITE 2',
+            'V. DOLORES',
+            '16 de JULIO',
+            'LIBERTAD',
+            'CHACALTAYA'
+        ];
+        
+        // Función para determinar la categoría del producto
+        function getProductCategory(producto) {
+            if (producto.toLowerCase().includes('jaleada')) return 'jaleada';
+            if (producto.toLowerCase().includes('moca')) return 'moca';
+            if (producto.toLowerCase().includes('selva')) return 'selva';
+            if (producto.toLowerCase().includes('tres leches')) return 'tres-leches';
+            if (producto.toLowerCase().includes('maracuya')) return 'maracuya';
+            if (producto.toLowerCase().includes('choco')) return 'choco';
+            return '';
+        }
+        
+        // Generar filas de la tabla
+        function generateTableRows() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            productos.forEach((producto, index) => {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-category', getProductCategory(producto));
+                tr.setAttribute('data-producto', producto);
+                
+                // Columna de producto
+                const tdProducto = document.createElement('td');
+                tdProducto.textContent = producto;
+                tr.appendChild(tdProducto);
+                
+                // Columnas de sucursales
+                sucursales.forEach((sucursal, sucIndex) => {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = '0';
+                    input.value = '';
+                    input.placeholder = '0';
+                    input.setAttribute('data-producto', producto);
+                    input.setAttribute('data-sucursal', sucursal);
+                    input.setAttribute('data-row', index);
+                    input.setAttribute('data-col', sucIndex);
+                    
+                    input.addEventListener('change', updateStats);
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
+            updateStats();
+        }
+        
+        // Actualizar estadísticas
+        function updateStats() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            let totalRegistros = 0;
+            
+            inputs.forEach(input => {
+                if (input.value && input.value !== '' && input.value !== '0') {
+                    totalRegistros++;
+                }
+            });
+            
+            document.getElementById('totalProductos').textContent = productos.length;
+            document.getElementById('totalRegistros').textContent = totalRegistros;
+        }
+        
+        // Función para manejar el pegado de datos
+        document.addEventListener('paste', function(e) {
+            const activeElement = document.activeElement;
+            
+            if (activeElement.tagName === 'INPUT' && activeElement.type === 'number') {
+                e.preventDefault();
+                
+                const clipboardData = e.clipboardData || window.clipboardData;
+                const pastedData = clipboardData.getData('Text');
+                
+                // Dividir por filas y columnas
+                const rows = pastedData.split('\n').filter(row => row.trim() !== '');
+                const startRow = parseInt(activeElement.getAttribute('data-row'));
+                const startCol = parseInt(activeElement.getAttribute('data-col'));
+                
+                rows.forEach((row, rowIndex) => {
+                    const cells = row.split('\t');
+                    cells.forEach((cell, colIndex) => {
+                        const targetRow = startRow + rowIndex;
+                        const targetCol = startCol + colIndex;
+                        
+                        const targetInput = document.querySelector(
+                            `input[data-row="${targetRow}"][data-col="${targetCol}"]`
+                        );
+                        
+                        if (targetInput) {
+                            const value = cell.trim();
+                            targetInput.value = value !== '' ? value : '';
+                        }
+                    });
+                });
+                
+                updateStats();
+            }
+        });
+        
+        // Exportar a JSON
+        function exportToJSON() {
+            const data = [];
+            const rows = document.querySelectorAll('#tableBody tr');
+            
+            rows.forEach(row => {
+                const producto = row.getAttribute('data-producto');
+                const inputs = row.querySelectorAll('input[type="number"]');
+                
+                inputs.forEach(input => {
+                    const sucursal = input.getAttribute('data-sucursal');
+                    const valor = input.value;
+                    
+                    if (valor && valor !== '' && valor !== '0') {
+                        data.push({
+                            producto: producto,
+                            sucursal: sucursal,
+                            cantidad: parseInt(valor) || 0
+                        });
+                    }
+                });
+            });
+            
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pedidos_' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
+        }
+        
+        // Exportar a CSV
+        function exportToCSV() {
+            let csv = 'Producto,Sucursal,Cantidad\n';
+            const rows = document.querySelectorAll('#tableBody tr');
+            
+            rows.forEach(row => {
+                const producto = row.getAttribute('data-producto');
+                const inputs = row.querySelectorAll('input[type="number"]');
+                
+                inputs.forEach(input => {
+                    const sucursal = input.getAttribute('data-sucursal');
+                    const valor = input.value;
+                    
+                    if (valor && valor !== '' && valor !== '0') {
+                        csv += `"${producto}","${sucursal}",${valor}\n`;
+                    }
+                });
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pedidos_' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+        }
+        
+        // Copiar datos de la tabla
+        function copyTableData() {
+            const rows = document.querySelectorAll('#tableBody tr');
+            let text = '';
+            
+            rows.forEach(row => {
+                const producto = row.getAttribute('data-producto');
+                const inputs = row.querySelectorAll('input[type="number"]');
+                const values = Array.from(inputs).map(input => input.value || '0');
+                
+                text += producto + '\t' + values.join('\t') + '\n';
+            });
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✓ Datos copiados al portapapeles');
+            });
+        }
+        
+        // Limpiar todos los datos
+        function clearAllData() {
+            if (confirm('¿Estás seguro de que deseas limpiar todos los datos?')) {
+                const inputs = document.querySelectorAll('input[type="number"]');
+                inputs.forEach(input => input.value = '');
+                updateStats();
+            }
+        }
+        
+        // Inicializar la tabla al cargar la página
+        generateTableRows();
+    </script>
+</body>
+</html>

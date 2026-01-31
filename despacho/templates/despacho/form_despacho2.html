@@ -1,0 +1,416 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ accion }} Despacho{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detalle-row {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        border: 1px solid #dee2e6;
+    }
+    .detalle-row.to-delete {
+        opacity: 0.5;
+        background: #ffe6e6;
+    }
+    .subtotal-badge {
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .total-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+    }
+    .btn-filter {
+        transition: all 0.3s ease;
+    }
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .btn-filter.active {
+        font-weight: bold;
+    }
+    .categoria-column {
+        transition: opacity 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="fas fa-truck"></i> 
+                {{ accion }} Despacho
+                {% if despacho %}
+                    <span class="text-muted">{{ despacho.numero }}</span>
+                {% endif %}
+            </h2>
+            <p class="text-muted mb-0">Complete los datos del despacho</p>
+        </div>
+        <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <form method="post" id="despachoForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Columna Principal -->
+            <div class="col-lg-8">
+                <!-- Información General -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Información General
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.sucursal.label_tag }}
+                                {{ form.sucursal }}
+                                {% if form.sucursal.errors %}
+                                    <div class="text-danger small">{{ form.sucursal.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.estado.label_tag }}
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                    <div class="text-danger small">{{ form.estado.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.tanda.label_tag }}
+                                {{ form.tanda }}
+                                {% if form.tanda.errors %}
+                                    <div class="text-danger small">{{ form.tanda.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.chofer.label_tag }}
+                                {{ form.chofer }}
+                                {% if form.chofer.errors %}
+                                    <div class="text-danger small">{{ form.chofer.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Productos -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-box"></i> Lista de Productos para Despacho
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- BOTONES DE FILTRO -->
+                        <div class="mb-4 d-flex gap-2">
+                            <button type="button" 
+                                    class="btn btn-primary btn-filter active" 
+                                    onclick="filtrarCategoria('todas')"
+                                    id="btn-todas">
+                                <i class="fas fa-th"></i> Todas
+                            </button>
+                            {% for categoria in productos_por_categoria.keys %}
+                                <button type="button" 
+                                        class="btn btn-outline-primary btn-filter" 
+                                        onclick="filtrarCategoria('{{ categoria }}')"
+                                        id="btn-{{ categoria }}">
+                                    {% if categoria == 'tortas' %}
+                                        <i class="fas fa-birthday-cake"></i>
+                                    {% elif categoria == 'Pasteles' %}
+                                        <i class="fas fa-cookie"></i>
+                                    {% else %}
+                                        <i class="fas fa-box"></i>
+                                    {% endif %}
+                                    {{ categoria|title }}
+                                </button>
+                            {% endfor %}
+                        </div>
+
+                        <!-- CONTENEDOR DE PRODUCTOS -->
+                        <div id="detalles-container">
+                            {% if productos_por_categoria %}
+                                <div class="row">
+                                    {% for categoria, productos in productos_por_categoria.items %}
+                                        <div class="col-md-6 mb-4 categoria-column" data-categoria="{{ categoria }}">
+                                            <div class="categoria-box">
+                                                <h6 class="bg-secondary text-white p-2 rounded mb-3">
+                                                    {% if categoria == 'tortas' %}
+                                                        <i class="fas fa-birthday-cake"></i>
+                                                    {% elif categoria == 'Pasteles' %}
+                                                        <i class="fas fa-cookie"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-box"></i>
+                                                    {% endif %}
+                                                    {{ categoria|title }}
+                                                </h6>
+                                                
+                                                {% for producto in productos %}
+                                                    <div class="detalle-row mb-3" data-producto-id="{{ producto.id }}">
+                                                        <div class="row align-items-end">
+                                                            <!-- Producto -->
+                                                            <div class="col-md-12 mb-2">
+                                                                <label class="form-label fw-bold">{{ producto.nombre }}</label>
+                                                                <span class="badge bg-info float-end">Stock: {{ producto.stock }}</span>
+                                                                <input type="hidden"
+                                                                       name="detalles-{{ producto.indice }}-producto"
+                                                                       value="{{ producto.id }}">
+                                                            </div>
+
+                                                            <!-- Cantidad -->
+                                                            <div class="col-4">
+                                                                <label class="form-label small">Cantidad</label>
+                                                                <input type="number"
+                                                                       name="detalles-{{ producto.indice }}-cantidad"
+                                                                       class="form-control form-control-sm cantidad-input"
+                                                                       min="0"
+                                                                       max="{{ producto.stock }}"
+                                                                       value="{{ producto.cantidad_actual }}">
+                                                            </div>
+
+                                                            <!-- Precio -->
+                                                            <div class="col-4">
+                                                                <label class="form-label small">Precio Unit.</label>
+                                                                <input type="text"
+                                                                       name="detalles-{{ producto.indice }}-precio_unitario"
+                                                                       class="form-control form-control-sm precio-input"
+                                                                       value="{{ producto.precio_actual|floatformat:2 }}"
+                                                                       readonly>
+                                                            </div>
+
+                                                            <!-- Subtotal -->
+                                                            <div class="col-4">
+                                                                <label class="form-label small">Subtotal</label>
+                                                                <div class="subtotal-badge text-center">
+                                                                    Bs. {{ producto.subtotal_actual|floatformat:2 }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- TOTAL FORMS -->
+                                <input type="hidden" 
+                                       id="id_detalles-TOTAL_FORMS" 
+                                       name="detalles-TOTAL_FORMS" 
+                                       value="{{ total_productos_count }}">
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    No hay productos disponibles para despacho
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral - Resumen -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator"></i> Resumen
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="total-section">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Subtotal:</span>
+                                <strong id="subtotal-display">Bs. 0.00</strong>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.descuento.label_tag }}
+                                {{ form.descuento }}
+                                {% if form.descuento.errors %}
+                                    <div class="text-danger small">{{ form.descuento.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between">
+                                <h5 class="mb-0">Total:</h5>
+                                <h4 class="mb-0 text-primary" id="total-display">Bs. 0.00</h4>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-2">
+                                <i class="fas fa-save"></i> Guardar Despacho
+                            </button>
+                            <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ==================== FUNCIONES DE FILTRADO ====================
+function filtrarCategoria(categoria) {
+    console.log('Filtrando por:', categoria);
+    
+    // Actualizar botones activos
+    document.querySelectorAll('.btn-filter').forEach(btn => {
+        btn.classList.remove('active', 'btn-primary');
+        btn.classList.add('btn-outline-primary');
+    });
+    
+    const btnActivo = document.getElementById('btn-' + categoria);
+    if (btnActivo) {
+        btnActivo.classList.add('active', 'btn-primary');
+        btnActivo.classList.remove('btn-outline-primary');
+    }
+    
+    // Mostrar/ocultar columnas según categoría
+    const columnas = document.querySelectorAll('.categoria-column');
+    
+    if (categoria === 'todas') {
+        columnas.forEach(col => col.style.display = 'block');
+    } else {
+        columnas.forEach(col => {
+            col.style.display = (col.dataset.categoria === categoria) ? 'block' : 'none';
+        });
+    }
+    
+    // Recalcular totales
+    if (typeof calcular === 'function') {
+        calcular();
+    }
+}
+
+// ==================== FUNCIONES DE CÁLCULO ====================
+function parseBoliviano(valor) {
+    if (!valor) return 0;
+    return parseFloat(String(valor).replace(',', '.')) || 0;
+}
+
+function formatBoliviano(numero) {
+    return numero.toFixed(2).replace('.', ',');
+}
+
+function calcular() {
+    console.log('=== CALCULANDO ===');
+    let total = 0;
+    
+    document.querySelectorAll('.detalle-row').forEach((row, index) => {
+        // Ignorar filas ocultas o de categorías filtradas
+        const columnaParent = row.closest('.categoria-column');
+        if (row.style.display === 'none' || (columnaParent && columnaParent.style.display === 'none')) {
+            return;
+        }
+        
+        const cantInput = row.querySelector('.cantidad-input');
+        const precInput = row.querySelector('.precio-input');
+        const subtBadge = row.querySelector('.subtotal-badge');
+        
+        if (!cantInput || !precInput || !subtBadge) {
+            console.log(`Fila ${index}: elementos no encontrados`);
+            return;
+        }
+        
+        const cant = parseFloat(cantInput.value) || 0;
+        const prec = parseBoliviano(precInput.value);
+        const subt = cant * prec;
+        
+        // Actualizar subtotal
+        subtBadge.textContent = 'Bs. ' + formatBoliviano(subt);
+        total += subt;
+    });
+    
+    // Aplicar descuento
+    const descInput = document.getElementById('id_descuento');
+    const desc = descInput ? (parseFloat(descInput.value) || 0) : 0;
+    
+    console.log('Subtotal:', total, '| Descuento:', desc, '| Total:', total - desc);
+    
+    // Actualizar displays
+    document.getElementById('subtotal-display').textContent = 'Bs. ' + formatBoliviano(total);
+    document.getElementById('total-display').textContent = 'Bs. ' + formatBoliviano(total - desc);
+}
+
+// ==================== INICIALIZACIÓN ====================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando sistema de despacho...');
+    
+    // Inicializar filtro
+    filtrarCategoria('todas');
+    
+    // Verificar productos cargados
+    const filas = document.querySelectorAll('.detalle-row');
+    console.log(`✓ Encontradas ${filas.length} filas de productos`);
+    
+    // Calcular totales iniciales
+    calcular();
+    
+    // Agregar eventos a cantidades
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        input.addEventListener('input', calcular);
+        input.addEventListener('change', calcular);
+    });
+    
+    // Agregar evento a descuento
+    const descuentoInput = document.getElementById('id_descuento');
+    if (descuentoInput) {
+        descuentoInput.addEventListener('input', calcular);
+        descuentoInput.addEventListener('change', calcular);
+    }
+    
+    console.log('✓ Sistema inicializado correctamente');
+});
+
+// ==================== VALIDACIÓN DE ENVÍO ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('despachoForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const detallesValidos = Array.from(document.querySelectorAll('.detalle-row'))
+                .filter(row => {
+                    const columna = row.closest('.categoria-column');
+                    return row.style.display !== 'none' && (!columna || columna.style.display !== 'none');
+                })
+                .some(row => {
+                    const cant = parseFloat(row.querySelector('.cantidad-input').value) || 0;
+                    return cant > 0;
+                });
+            
+            if (!detallesValidos) {
+                e.preventDefault();
+                alert('⚠️ Debe agregar al menos un producto con cantidad mayor a 0');
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

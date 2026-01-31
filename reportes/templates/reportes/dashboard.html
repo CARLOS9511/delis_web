@@ -1,0 +1,103 @@
+<!-- reportes/templates/reportes/dashboard.html -->
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_title %}📊 Dashboard{% endblock %}
+
+{% block content %}
+<h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem;">
+    📊 Dashboard Principal
+</h1>
+
+<!-- Estadísticas -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Total Productos -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+        <div style="font-size: 3rem; font-weight: 800;">{{ total_productos }}</div>
+        <div style="font-size: 1.1rem; opacity: 0.9;">Total Productos</div>
+    </div>
+    
+    <!-- Stock Total -->
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+        <div style="font-size: 3rem; font-weight: 800;">{{ stock_total }}</div>
+        <div style="font-size: 1.1rem; opacity: 0.9;">Unidades en Stock</div>
+    </div>
+    
+    <!-- Total Clientes -->
+    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+        <div style="font-size: 3rem; font-weight: 800;">{{ total_clientes }}</div>
+        <div style="font-size: 1.1rem; opacity: 0.9;">Clientes Registrados</div>
+    </div>
+    
+    <!-- Total Ventas -->
+    <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+        <div style="font-size: 3rem; font-weight: 800;">{{ total_ventas }}</div>
+        <div style="font-size: 1.1rem; opacity: 0.9;">Ventas Realizadas</div>
+    </div>
+</div>
+
+<!-- Ventas por Estado -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+        <div style="font-size: 2rem; font-weight: 800; color: #10b981;">{{ ventas_completadas }}</div>
+        <div style="color: #64748b;">✅ Completadas</div>
+    </div>
+    
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+        <div style="font-size: 2rem; font-weight: 800; color: #f59e0b;">{{ ventas_pendientes }}</div>
+        <div style="color: #64748b;">⏳ Pendientes</div>
+    </div>
+    
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+        <div style="font-size: 2rem; font-weight: 800; color: #ef4444;">{{ ventas_canceladas }}</div>
+        <div style="color: #64748b;">❌ Canceladas</div>
+    </div>
+    
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+        <div style="font-size: 2rem; font-weight: 800; color: #667eea;">${{ total_vendido|floatformat:2 }}</div>
+        <div style="color: #64748b;">💵 Total Vendido</div>
+    </div>
+</div>
+
+<!-- Alertas -->
+{% if productos_sin_stock > 0 or productos_stock_bajo %}
+<div class="card" style="background: #fee2e2; border-left: 4px solid #ef4444;">
+    <h3 style="color: #991b1b; margin-bottom: 1rem;">⚠️ Alertas de Inventario</h3>
+    <p style="color: #7f1d1d;">
+        {% if productos_sin_stock > 0 %}
+        <strong>{{ productos_sin_stock }}</strong> productos sin stock
+        {% endif %}
+        {% if productos_stock_bajo %}
+        | <strong>{{ productos_stock_bajo.count }}</strong> productos con stock bajo
+        {% endif %}
+    </p>
+</div>
+{% endif %}
+
+<!-- Acciones Rápidas -->
+<div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem;">
+    <!-- Botones de Despacho (Pedidos y Saldos) -->
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <a href="{% url 'despacho:crear_pedido' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            📋 Gestionar Pedidos
+        </a>
+        <a href="{% url 'despacho:crear_saldo' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+            📊 Gestionar Saldos
+        </a>
+    </div>
+    
+    <!-- Otros botones -->
+    <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-primary">
+        ➕ Nueva Venta
+    </a>
+    {% if request.user.groups.all.0.name != 'vendedores' %}
+    <a href="{% url 'inventario:lista' %}" class="btn btn-success">
+        📦 Ver Productos
+    </a>
+    <a href="/admin/" class="btn btn-secondary">
+        ⚙️ Panel Admin
+    </a>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pedidos - Vista Excel{% endblock %}
+
+{% block extra_css %}
+
+{% load dict_extras %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    .excel-wrapper {
+        width: 100%;
+        min-height: 100vh;
+    }
+    
+    .excel-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .btn-excel {
+        padding: 10px 25px;
+        font-size: 14px;
+        font-weight: bold;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    
+    .btn-guardar {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-limpiar {
+        background: #ffc107;
+        color: white;
+    }
+    
+    .excel-container {
+        padding: 20px;
+        overflow: auto;
+        background: white;
+    }
+    
+    .excel-table {
+        border-collapse: collapse;
+        font-size: 11px;
+        width: auto;
+    }
+    
+    .excel-table th,
+    .excel-table td {
+        border: 1px solid #d0d0d0;
+        padding: 0;
+        height: 22px;
+    }
+    
+    .excel-table thead th {
+        background: #f8b400;
+        color: white;
+        font-weight: bold;
+        padding: 6px 8px;
+        font-size: 10px;
+        position: sticky;
+        top: 0;
+    }
+    
+    .excel-table thead th.productos-header {
+        background: #4a4a4a;
+        text-align: left;
+        min-width: 200px;
+        left: 0;
+        z-index: 11;
+    }
+    
+    .excel-table td.producto-cell {
+        background: #f8f9fa;
+        text-align: left;
+        padding: 4px 10px;
+        font-weight: 500;
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        min-width: 200px;
+    }
+   
+    
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="excel-wrapper">
+    <div class="excel-header">
+        <div>
+            <h3 style="margin:0;">Pedidos - Vista Excel</h3>
+            <small>Fecha: {{ fecha_actual }} | Total pedidos: {{ total_pedidos }}</small>
+        </div>
+        <div>
+            <button class="btn-excel btn-limpiar" onclick="limpiarTodo()">LIMPIAR</button>
+            <button class="btn-excel btn-guardar" onclick="guardarPedidos()">GUARDAR</button>
+        </div>
+    </div>
+
+    <div class="excel-container">
+        <table  class="excel-table">
+            <thead>
+                <tr>
+                    <th class="productos-header">PRODUCTOS</th>
+                    {% for sucursal in sucursales %}
+                        <th>{{ sucursal.nombre_sucursal|upper }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody id="tablaBody">
+                {% for producto in productos %}
+                <tr>
+                    <!-- Columna Producto -->
+                    <td>{{ producto.nombre|slice:"2:" }}</td>
+
+                    <!-- Columnas por sucursal -->
+                    {% for sucursal in sucursales %}
+                        <td style="text-align:center;">
+                            <input type="number"
+                                class="cantidad-input"
+                                value="{{ matriz|get_item:producto.id|get_item:sucursal.id|default:0 }}"
+                                data-producto="{{ producto.id }}"
+                                data-sucursal="{{ sucursal.id }}"
+                                min="0"
+                                style="width:60px; text-align:center; border:none;">
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function guardarPedidos() {
+    let datos = [];
+
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        let cantidad = parseInt(input.value) || 0;
+
+        if (cantidad > 0) {
+            datos.push({
+                producto: input.dataset.producto,
+                sucursal: input.dataset.sucursal,
+                cantidad: cantidad
+            });
+        }
+    });
+
+    fetch("{% url 'despacho:guardar_pedidos' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify(datos)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Pedidos guardados correctamente");
+        location.reload();
+    });
+}
+</script>
+
+{% endblock %}

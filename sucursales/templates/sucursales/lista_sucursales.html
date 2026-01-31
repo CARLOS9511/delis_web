@@ -1,0 +1,78 @@
+<!-- sucursales/templates/sucursales/lista_sucursales.html -->
+{% extends 'base.html' %}
+
+{% block title %}Sucursales{% endblock %}
+
+{% block page_title %}👥 Sucursales{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Lista de Sucursales</h2>
+        <a href="/admin/clientes/cliente/add/" class="btn btn-primary">
+            ➕ Nuevo Sucursal
+        </a>
+    </div>
+    
+    <!-- Búsqueda -->
+    <form method="GET" style="margin-bottom: 2rem;">
+        <div style="display: flex; gap: 1rem;">
+            <input type="text" name="buscar" placeholder="🔍 Buscar cliente..." 
+                   value="{{ request.GET.buscar }}"
+                   style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
+    
+    <!-- Tabla de Sucursales -->
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                <th style="padding: 1rem; text-align: left;">Nombre</th>
+                <th style="padding: 1rem; text-align: left;">Email</th>
+                <th style="padding: 1rem; text-align: left;">Teléfono</th>
+                <th style="padding: 1rem; text-align: left;">Dirección</th>
+                <th style="padding: 1rem; text-align: left;">Ciudad</th>
+                <th style="padding: 1rem; text-align: left;">Ciudad</th>
+                <th style="padding: 1rem; text-align: left;">Fecha de Registro</th>
+                <th style="padding: 1rem; text-align: left;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sucursal in sucursales %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 1rem; font-weight: 600;">{{ sucursal.get_nombre_sucursal_display }}</td>
+                <td style="padding: 1rem;">{{ sucursal.email }}</td>
+                <td style="padding: 1rem;">{{ sucursal.telefono }}</td>
+                <td style="padding: 1rem;">{{ sucursal.direccion }}</td>
+                <td style="padding: 1rem;">{{ sucursal.ciudad }}</td>
+                <td style="padding: 1rem;">{{ sucursal.telefono|default:"-" }}</td>
+                <td style="padding: 1rem;">
+                    {% comment %} <a href="{% url 'sucursales:detalle' cliente.id %}" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">
+                        Ver Detalle
+                    </a> {% endcomment %}
+                </td>
+
+                 <td>
+                    {% if sucursal.activo %}
+                        ✅ Activa
+                    {% else %}
+                        ❌ Inactiva
+                    {% endif %}
+                </td>
+                <td>{{ sucursal.fecha_registro|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="padding: 3rem; text-align: center; color: #94a3b8;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+                    <p>No hay clientes registrados</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
+

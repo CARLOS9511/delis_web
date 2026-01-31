@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Despacho {{ despacho.numero }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .badge-estado {
+        font-size: 1rem;
+        padding: 8px 15px;
+    }
+    .producto-row:hover {
+        background: #f8f9fa;
+    }
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+    }
+
+    /* Líneas horizontales */
+    .tabla-zebra tbody tr {
+        border-bottom: 2px solid #587693ff;
+    }
+
+    /* Primer borde superior */
+    .tabla-zebra tbody tr:first-child {
+        border-top: 2px solid #406992ff;
+    }
+
+    /* Sombreado intercalado */
+    .tabla-zebra tbody tr:nth-child(odd) {
+        background-color: #e4effcff; /* gris claro */
+    }
+
+    .tabla-zebra tbody tr:nth-child(even) {
+        background-color: #ffffff; /* blanco */
+    }
+
+    /* Hover opcional */
+    .tabla-zebra tbody tr:hover {
+        background-color: #a7c9ebff; /* gris un poco más oscuro */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h2>
+                <i class="fas fa-truck"></i> 
+                Despacho {{ despacho.numero }}
+            </h2>
+            <p class="text-muted mb-0">Detalle completo del despacho</p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            {% if despacho.estado == 'pendiente' %}
+                <a href="{% url 'despacho:despacho_editar' despacho.id %}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <button class="btn btn-success" onclick="completarDespacho()">
+                    <i class="fas fa-check"></i> Completar
+                </button>
+            {% endif %}
+            <a href="{% url 'despacho:despacho_pdf' despacho.id %}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <!-- Estado y Datos Generales -->
+            <div class="info-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Información General</h4>
+                    <span class="badge badge-{{ despacho.estado }} badge-estado">
+                        {{ despacho.get_estado_display }}
+                    </span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="text-muted">Número de Despacho:</span>
+                    <strong>{{ despacho.numero }}</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Sucursal Destino:</span>
+                    <strong>
+                        <i class="fas fa-store text-primary"></i>
+                        {{ despacho.sucursal.nombre_sucursal }}
+                    </strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Fecha de Creación:</span>
+                    <strong>{{ despacho.fecha_creacion|date:"d/m/Y H:i" }}</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Usuario:</span>
+                    <strong>{{ despacho.usuario.username|default:"Sistema" }}</strong>
+                </div>
+                {% if despacho.tanda %}
+                <div class="info-row">
+                    <span class="text-muted">Tanda:</span>
+                    <strong>{{ despacho.tanda }}</strong>
+                </div>
+                {% endif %}
+                {% if despacho.chofer %}
+                <div class="info-row">
+                    <span class="text-muted">Chofer:</span>
+                    <strong>{{ despacho.chofer }}</strong>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Productos del Despacho -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-box"></i> 
+                        Productos ({{ despacho.detalles.count }})
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 tabla-zebra">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in despacho.detalles.all %}
+                                <tr class="producto-row">
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <strong>{{ detalle.producto.nombre }}</strong>
+                                        {% if detalle.producto.codigo %}
+                                        <br>
+                                        <small class="text-muted">Cód: {{ detalle.producto.codigo }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ detalle.cantidad }}</span>
+                                    </td>
+                                    <td class="text-end">Bs. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        <strong>Bs. {{ detalle.subtotal|floatformat:2 }}</strong>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        No hay productos en este despacho
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen Financiero -->
+        <div class="col-lg-4">
+            <div class="info-card sticky-top" style="top: 20px;">
+                <h4 class="mb-4">Resumen Financiero</h4>
+                
+                <div class="info-row">
+                    <span class="text-muted">Subtotal:</span>
+                    <strong>Bs. {{ despacho.subtotal|floatformat:2 }}</strong>
+                </div>
+                
+                {% if despacho.descuento > 0 %}
+                <div class="info-row text-danger">
+                    <span>Descuento:</span>
+                    <strong>- Bs. {{ despacho.descuento|floatformat:2 }}</strong>
+                </div>
+                {% endif %}
+                
+                <hr class="my-3">
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Total:</h5>
+                    <h3 class="mb-0 text-primary">
+                        Bs. {{ despacho.total|floatformat:2 }}
+                    </h3>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="mt-4 pt-4 border-top">
+                    <h6 class="text-muted mb-3">Información Adicional</h6>
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Productos:</span>
+                            <strong>{{ despacho.detalles.count }}</strong>
+                        </div>
+                        {% comment %} <div class="d-flex justify-content-between mb-2">
+                            <span>Total Unidades:</span>
+                            <strong>
+                                {% widthratio despacho.detalles.all|length 1 1 %}
+                                {% with total=0 %}
+                                    {% for detalle in despacho.detalles.all %}
+                                        {% widthratio total 1 1 as temp %}
+                                        {% widthratio detalle.cantidad 1 1 as cantidad %}
+                                        {% widthratio temp|add:cantidad 1 1 as total %}
+                                    {% endfor %}
+                                    {{ total }}
+                                {% endwith %}
+                            </strong>
+                        </div> {% endcomment %}
+                    </div>
+                </div>
+
+                <!-- Acciones rápidas -->
+                {% if despacho.estado == 'pendiente' %}
+                <div class="mt-4 no-print">
+                    <form method="post" action="{% url 'despacho:despacho_completar' despacho.id %}" class="mb-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check-circle"></i> Marcar como Completado
+                        </button>
+                    </form>
+                    <button class="btn btn-outline-danger w-100" onclick="confirmarCancelacion()">
+                        <i class="fas fa-times-circle"></i> Cancelar Despacho
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalCancelar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Cancelar Despacho</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea cancelar el despacho <strong>{{ despacho.numero }}</strong>?</p>
+                <p class="text-muted mb-0">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, volver</button>
+                <form method="post" action="{% url 'despacho:despacho_cancelar' despacho.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sí, cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal completar -->
+<div class="modal fade" id="modalCompletar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Completar Despacho</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Confirma que el despacho <strong>{{ despacho.numero }}</strong> ha sido completado?</p>
+                <p class="text-muted mb-0">Se marcará como entregado a la sucursal.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'despacho:despacho_completar' despacho.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Completar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarCancelacion() {
+    const modal = new bootstrap.Modal(document.getElementById('modalCancelar'));
+    modal.show();
+}
+
+function completarDespacho() {
+    const modal = new bootstrap.Modal(document.getElementById('modalCompletar'));
+    modal.show();
+}
+</script>
+{% endblock %}

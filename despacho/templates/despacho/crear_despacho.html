@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load dict_extras %}
+
+{% block title %}Crear Despacho - Sistema{% endblock %}
+
+{% block page_title %}🚚 Crear Nuevo Despacho{% endblock %}
+
+{% block extra_css %}
+<style>
+    .despacho-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .despacho-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px 15px 0 0;
+        text-align: center;
+    }
+    
+    .form-section {
+        background: white;
+        padding: 25px;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        margin-bottom: 20px;
+    }
+    
+    .detalles-container {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .detalle-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 10px;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background-color 0.2s ease;
+    }
+    
+    .detalle-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .producto-info {
+        flex: 0 0 400px;
+    }
+    
+    .stock-info {
+        flex: 0 0 100px;
+        text-align: center;
+    }
+    
+    .stock-bajo {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .stock-normal {
+        color: #28a745;
+    }
+    
+    .input-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .btn-action {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-remove {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-remove:hover {
+        background: #c82333;
+        transform: scale(1.1);
+    }
+    
+    .total-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 20px;
+        border-radius: 12px;
+        text-align: right;
+        border: 2px solid #007bff;
+    }
+    
+    .btn-dashboard {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-dashboard:hover {
+        background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .btn-primary-large {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 16px;
+    }
+    
+    .btn-primary-large:hover {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+    }
+    
+    .sucursal-card {
+        border: 2px solid #007bff;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e6f3ff 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .sucursal-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,123,255,0.2);
+        border-color: #0056b3;
+    }
+    
+    .sucursal-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #0056b3;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .productos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .producto-item {
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    
+    .producto-item:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 12px rgba(0,123,255,0.1);
+    }
+    
+    .error-text {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="despacho-container">
+    <!-- Header -->
+    <div class="despacho-header">
+        <h2 class="mb-2">🚚 CREAR NUEVO DESPACHO</h2>
+        <p>Seleccione productos y cantidades para cada sucursal</p>
+    </div>
+
+    <form method="POST" id="despachoForm">
+        {% csrf_token %}
+        
+        <!-- Información General del Despacho -->
+        <div class="form-section">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">🏪 Sucursal Destino</label>
+                    {{ form.sucursal }}
+                    {% if form.sucursal.errors %}
+                        <div class="error-text">{{ form.sucursal.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">📋 Estado</label>
+                    {{ form.estado }}
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">💰 Descuento (Bs.)</label>
+                    {{ form.descuento }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">🚛 Tanda</label>
+                    {{ form.tanda }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">👨‍✈️ Chofer</label>
+                    {{ form.chofer }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos por Sucursal -->
+        {% for sucursal in sucursales %}
+        <div class="sucursal-card">
+            <div class="sucursal-title">🏪 {{ sucursal.nombre_sucursal }}</div>
+            
+            <div class="productos-grid">
+                {% for producto in productos %}
+                <div class="producto-item">
+                    <div class="fw-bold">{{ producto.nombre }}</div>
+                    <div class="text-muted small">Stock: {{ producto.stock }}</div>
+                    
+                    <div class="mt-2">
+                        <label class="form-label small">Cantidad:</label>
+                        <input type="number" 
+                               name="sucursal_{{ sucursal.id }}_producto_{{ producto.id }}" 
+                               class="form-control" 
+                               min="0" 
+                               max="{{ producto.stock }}"
+                               value="0"
+                               onchange="calcularSubtotal({{ sucursal.id }}, {{ producto.id }}, this.value)">
+                        
+                        <input type="hidden" 
+                               name="sucursal_{{ sucursal.id }}_producto_{{ producto.id }}_precio" 
+                               value="{{ producto.precio_venta }}">
+                        
+                        <input type="hidden" 
+                               name="sucursal_{{ sucursal.id }}_producto_{{ producto.id }}_subtotal" 
+                               id="subtotal_{{ sucursal.id }}_{{ producto.id }}"
+                               value="0">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Total por Sucursal -->
+            <div class="mt-3 text-center">
+                <h5>Total Sucursal: 
+                    <span class="badge bg-primary fs-6" id="total_sucursal_{{ sucursal.id }}">Bs. 0.00</span>
+                </h5>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Totales Generales -->
+        <div class="total-section">
+            <h3>📊 RESUMEN GENERAL</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Subtotal: 
+                        <span id="subtotal_general" class="badge bg-secondary fs-6">Bs. 0.00</span>
+                    </h5>
+                </div>
+                <div class="col-md-6">
+                    <h5>Total Final: 
+                        <span id="total_general" class="badge bg-success fs-6">Bs. 0.00</span>
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="text-center mt-4">
+            <a href="{% url 'reportes:dashboard' %}" class="btn-dashboard me-3">
+                🏠 VOLVER AL DASHBOARD
+            </a>
+            <button type="submit" class="btn-primary-large">
+                💾 GUARDAR DESPACHO
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function calcularSubtotal(sucursalId, productoId, cantidad) {
+    const precioInput = document.querySelector(`input[name="sucursal_${sucursalId}_producto_${productoId}_precio"]`);
+    const subtotalInput = document.getElementById(`subtotal_${sucursalId}_${productoId}`);
+    
+    const precio = parseFloat(precioInput.value) || 0;
+    const cantidad = parseInt(cantidad) || 0;
+    const subtotal = precio * cantidad;
+    
+    subtotalInput.value = subtotal.toFixed(2);
+    
+    // Actualizar totales
+    actualizarTotales();
+}
+
+function actualizarTotales() {
+    let subtotalGeneral = 0;
+    const sucursales = {{ sucursales|safe }};
+    
+    sucursales.forEach(sucursal => {
+        let totalSucursal = 0;
+        
+        {{ productos|safe }}.forEach(producto => {
+            const subtotalInput = document.getElementById(`subtotal_${sucursal.id}_${producto.id}`);
+            if (subtotalInput) {
+                const subtotal = parseFloat(subtotalInput.value) || 0;
+                totalSucursal += subtotal;
+                subtotalGeneral += subtotal;
+            }
+        });
+        
+        const totalSucursalElement = document.getElementById(`total_sucursal_${sucursal.id}`);
+        if (totalSucursalElement) {
+            totalSucursalElement.textContent = `Bs. ${totalSucursal.toFixed(2)}`;
+        }
+    });
+    
+    // Actualizar totales generales
+    const descuento = parseFloat(document.querySelector('input[name="descuento"]').value) || 0;
+    const total = Math.max(0, subtotalGeneral - descuento);
+    
+    document.getElementById('subtotal_general').textContent = `Bs. ${subtotalGeneral.toFixed(2)}`;
+    document.getElementById('total_general').textContent = `Bs. ${total.toFixed(2)}`;
+}
+
+// Inicializar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarTotales();
+});
+
+// Validación antes de enviar formulario
+document.getElementById('despachoForm').addEventListener('submit', function(e) {
+    let tieneProductos = false;
+    const inputs = document.querySelectorAll('input[type="number"]');
+    
+    inputs.forEach(input => {
+        if (parseInt(input.value) > 0) {
+            tieneProductos = true;
+        }
+    });
+    
+    if (!tieneProductos) {
+        e.preventDefault();
+        alert('❌ Debe agregar al menos un producto con cantidad mayor a 0');
+    }
+});
+</script>
+{% endblock %}

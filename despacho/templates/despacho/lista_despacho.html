@@ -1,0 +1,550 @@
+<!-- despachos/templates/despachos/lista_despacho.html -->
+{% extends 'base.html' %}
+
+{% block title %}Despachos{% endblock %}
+
+{% block page_title %}🚚 Despachos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabla-despachos {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    
+    .tabla-despachos table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .tabla-despachos thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .tabla-despachos thead th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .tabla-despachos tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s ease;
+    }
+    
+    .tabla-despachos tbody tr:hover {
+        background: #f8fafc;
+    }
+    
+    .tabla-despachos tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .despacho-numero {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 1rem;
+    }
+    
+    .sucursal-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .sucursal-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .sucursal-detalles h4 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.15rem;
+    }
+    
+    .sucursal-detalles .fecha {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .badge {
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .badge-pendiente {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .badge-completada {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .badge-cancelada {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .precio-cell {
+        text-align: right;
+        font-weight: 600;
+    }
+    
+    .precio-subtotal { color: #64748b; }
+    .precio-descuento { color: #f59e0b; }
+    .precio-total { 
+        color: #10b981;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    
+    .acciones-cell {
+        text-align: center;
+    }
+    
+    .btn-tabla {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 2px;
+    }
+    
+    .btn-ver {
+        background: #3b82f6;
+        color: white;
+    }
+    
+    .btn-ver:hover {
+        background: #2563eb;
+    }
+    
+    .btn-editar {
+        background: #f59e0b;
+        color: white;
+    }
+    
+    .btn-editar:hover {
+        background: #d97706;
+    }
+    
+    .filtros-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-left: 4px solid #667eea;
+    }
+    
+    .stat-valor {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    
+    .tabla-vacia {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #94a3b8;
+    }
+    
+    .tabla-vacia-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .ordenar-link {
+        color: white;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .ordenar-link:hover {
+        opacity: 0.8;
+    }
+    
+    .usuario-badge {
+        background: #e2e8f0;
+        color: #475569;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    @media (max-width: 1024px) {
+        .tabla-despachos {
+            overflow-x: auto;
+        }
+        
+        .stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🚚 Despachos </h2>
+        
+        <h3>{% now "D d/F/Y" %}</h3>
+
+        <div style="display: flex; gap: 1rem;">
+            <a href="{% url 'despacho:despacho_crear' %}" class="btn btn-primary">
+                ➕ Nuevo Despacho
+            </a>
+            <button class="btn btn-success" onclick="window.print()">
+                🖨️ Imprimir
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="stats-row">
+    <div class="stat-card" style="border-left-color: #ffc107;">
+        <div class="stat-valor" style="color: #ffc107;">{{ stats.pendientes|default:0 }}</div>
+        <div class="stat-label">⏳ Despachos Pendientes</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #10b981;">
+        <div class="stat-valor" style="color: #10b981;">{{ stats.completadas|default:0 }}</div>
+        <div class="stat-label">✅ Despachos Completados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #ef4444;">
+        <div class="stat-valor" style="color: #ef4444;">{{ stats.canceladas|default:0 }}</div>
+        <div class="stat-label">❌ Despachos Cancelados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #3b82f6;">
+        <div class="stat-valor">{{ despachos.paginator.count|default:0 }}</div>
+        <div class="stat-label">📦 Total Despachos</div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filtros-container">
+    <form method="GET">
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                    🔍 Buscar:
+                </label>
+                <input type="text" name="buscar" placeholder="Buscar por número, chofer..." 
+                       value="{{ request.GET.buscar }}"
+                       style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                    📊 Estado:
+                </label>
+                <select name="estado" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    <option value="">Todos</option>
+                    <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                    <option value="completada" {% if request.GET.estado == 'completada' %}selected{% endif %}>Completadas</option>
+                    <option value="cancelada" {% if request.GET.estado == 'cancelada' %}selected{% endif %}>Canceladas</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                    🏪 Sucursal:
+                </label>
+                <select name="sucursal" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    <option value="">Todas</option>
+                    {% for sucursal in sucursales %}
+                    <option value="{{ sucursal.id }}" {% if request.GET.sucursal == sucursal.id|stringformat:"s" %}selected{% endif %}>
+                        {{ sucursal.nombre_sucursal }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                    📅 Fecha:
+                </label>
+                <input type="date" name="fecha" value="{{ request.GET.fecha }}"
+                       style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                {% if request.GET.buscar or request.GET.estado or request.GET.sucursal or request.GET.fecha %}
+                <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-secondary">Limpiar</a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Tabla de Despachos -->
+<div class="tabla-despachos">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px;">#</th>
+                <th style="width: 150px;">
+                    <a href="?orden=numero" class="ordenar-link">
+                        Número
+                        {% if request.GET.orden == 'numero' %}↓{% else %}↕{% endif %}
+                    </a>
+                </th>
+                <th>Sucursal</th>
+                <th style="width: 100px; text-align: center;">Estado</th>
+                <th style="width: 100px;">Tanda</th>
+                <th style="width: 120px;">Chofer</th>
+                <th style="width: 120px; text-align: right;">
+                    <a href="?orden=subtotal" class="ordenar-link">
+                        Subtotal
+                        {% if request.GET.orden == 'subtotal' %}↓{% else %}↕{% endif %}
+                    </a>
+                </th>
+                <th style="width: 100px; text-align: right;">Descuento</th>
+                <th style="width: 120px; text-align: right;">
+                    <a href="?orden=total" class="ordenar-link">
+                        Total
+                        {% if request.GET.orden == 'total' %}↓{% else %}↕{% endif %}
+                    </a>
+                </th>
+                <th style="width: 100px; text-align: center;">Usuario</th>
+                <th style="width: 150px; text-align: center;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for despacho in despachos %}
+            <tr>
+                <!-- Número -->
+                <td style="color: #64748b; font-weight: 600;">
+                    {{ forloop.counter }}
+                </td>
+                
+                <!-- Número de Despacho -->
+                <td>
+                    <div class="despacho-numero">{{ despacho.numero }}</div>
+                </td>
+                
+                <!-- Sucursal -->
+                <td>
+                    <div class="sucursal-info">
+                        <div class="sucursal-icon">
+                            🏪
+                        </div>
+                        <div class="sucursal-detalles">
+                            <h4>{{ despacho.sucursal.nombre_sucursal }}</h4>
+                            <div class="fecha">{{ despacho.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                        </div>
+                    </div>
+                </td>
+                
+                <!-- Estado -->
+                <td style="text-align: center;">
+                    <span class="badge badge-{{ despacho.estado }}">
+                        {% if despacho.estado == 'pendiente' %}⏳{% elif despacho.estado == 'completada' %}✅{% else %}❌{% endif %}
+                        {{ despacho.get_estado_display }}
+                    </span>
+                </td>
+                
+                <!-- Tanda -->
+                <td style="color: #64748b; font-weight: 600;">
+                    {{ despacho.tanda|default:"-" }}
+                </td>
+                
+                <!-- Chofer -->
+                <td style="color: #1e293b; font-weight: 600;">
+                    {{ despacho.chofer|default:"-" }}
+                </td>
+                
+                <!-- Subtotal -->
+                <td class="precio-cell precio-subtotal">
+                    Bs. {{ despacho.subtotal|floatformat:2 }}
+                </td>
+                
+                <!-- Descuento -->
+                <td class="precio-cell precio-descuento">
+                    {% if despacho.descuento > 0 %}
+                    -Bs. {{ despacho.descuento|floatformat:2 }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                
+                <!-- Total -->
+                <td class="precio-cell precio-total">
+                    Bs. {{ despacho.total|floatformat:2 }}
+                </td>
+                
+                <!-- Usuario -->
+                <td style="text-align: center;">
+                    <span class="usuario-badge">
+                        👤 {{ despacho.usuario.username|default:"Sistema" }}
+                    </span>
+                </td>
+                
+                <!-- Acciones -->
+                <td class="acciones-cell">
+                    <a href="{% url 'despacho:despacho_detalle' despacho.id %}" 
+                       class="btn-tabla btn-ver" title="Ver">
+                        👁️ Ver
+                    </a>
+                    {% if despacho.estado == 'pendiente' %}
+                    <a href="{% url 'despacho:despacho_editar' despacho.id %}" 
+                       class="btn-tabla btn-editar" title="Editar">
+                        ✏️ Editar
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="11" class="tabla-vacia">
+                    <div class="tabla-vacia-icon">🚚</div>
+                    <h3 style="color: #64748b; font-size: 1.5rem; margin-bottom: 0.5rem;">
+                        No hay despachos
+                    </h3>
+                    <p style="color: #94a3b8; margin-bottom: 1.5rem;">
+                        {% if request.GET.buscar or request.GET.estado or request.GET.sucursal or request.GET.fecha %}
+                            No se encontraron despachos con los filtros aplicados
+                        {% else %}
+                            Comienza creando tu primer despacho a sucursales
+                        {% endif %}
+                    </p>
+                    {% if request.GET.buscar or request.GET.estado or request.GET.sucursal or request.GET.fecha %}
+                    <a href="{% url 'despacho_lista' %}" class="btn btn-secondary">
+                        Limpiar Filtros
+                    </a>
+                    {% else %}
+                    {% comment %} <a href="{% url 'despacho_crear' %}" class="btn btn-primary"> {% endcomment %}
+                    <a href="" class="btn btn-primary">
+                        ➕ Crear Despacho
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        
+        <!-- Totales -->
+        {% if despachos %}
+        <tfoot style="background: #f8fafc; font-weight: 700;">
+            <tr>
+                <td colspan="6" style="padding: 1.25rem; text-align: right;">
+                    TOTALES:
+                </td>
+                <td class="precio-cell" style="color: #64748b; font-size: 1.1rem;">
+                    Bs. {{ total_subtotal|floatformat:2 }}
+                </td>
+                <td class="precio-cell" style="color: #f59e0b; font-size: 1.1rem;">
+                    Bs. {{ total_descuento|floatformat:2 }}
+                </td>
+                <td class="precio-cell" style="color: #10b981; font-size: 1.2rem;">
+                    Bs. {{ total_general|floatformat:2 }}
+                </td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+</div>
+
+<!-- Paginación -->
+{% if despachos.has_other_pages %}
+<div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 0.5rem;">
+    {% if despachos.has_previous %}
+    <a href="?page={{ despachos.previous_page_number }}" class="btn btn-secondary">← Anterior</a>
+    {% endif %}
+    
+    {% for num in despachos.paginator.page_range %}
+    <a href="?page={{ num }}" 
+       class="btn {% if despachos.number == num %}btn-primary{% else %}btn-secondary{% endif %}">
+        {{ num }}
+    </a>
+    {% endfor %}
+    
+    {% if despachos.has_next %}
+    <a href="?page={{ despachos.next_page_number }}" class="btn btn-secondary">Siguiente →</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Información adicional -->
+{% if despachos %}
+<div style="margin-top: 1.5rem; padding: 1rem; background: white; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="color: #64748b;">
+        Mostrando <strong style="color: #1e293b;">{{ despachos|length }}</strong> despachos
+    </div>
+    <div style="font-size: 0.9rem; color: #94a3b8;">
+        Última actualización: {{ despachos.0.fecha_creacion|date:"d/m/Y H:i" }}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+    // Resaltar fila al hacer hover
+    const filas = document.querySelectorAll('.tabla-despachos tbody tr');
+    filas.forEach(fila => {
+        fila.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn-tabla')) {
+                console.log('Despacho seleccionado');
+            }
+        });
+    });
+</script>
+{% endblock %}

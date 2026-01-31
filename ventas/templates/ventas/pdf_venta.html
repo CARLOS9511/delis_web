@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Venta {{ venta.numero }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #10b981;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24pt;
+            color: #10b981;
+        }
+        
+        .header p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .info-section {
+            margin-bottom: 25px;
+        }
+        
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            display: table-row;
+        }
+        
+        .info-label {
+            display: table-cell;
+            width: 40%;
+            padding: 8px;
+            background: #f5f5f5;
+            font-weight: bold;
+            border: 1px solid #ddd;
+        }
+        
+        .info-value {
+            display: table-cell;
+            width: 60%;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .estado-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 3px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .estado-pendiente {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .estado-completada {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .estado-cancelada {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .productos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .productos-table thead {
+            background: #10b981;
+            color: white;
+        }
+        
+        .productos-table th,
+        .productos-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        
+        .productos-table th {
+            font-weight: bold;
+        }
+        
+        .productos-table tbody tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .totales {
+            float: right;
+            width: 300px;
+            margin-top: 20px;
+        }
+        
+        .totales-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .totales-row.total {
+            background: #f5f5f5;
+            font-size: 14pt;
+            font-weight: bold;
+            border: 2px solid #10b981;
+            margin-top: 10px;
+        }
+        
+        .firmas {
+            margin-top: 80px;
+            display: table;
+            width: 100%;
+        }
+        
+        .firma {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+        }
+        
+        .firma-linea {
+            border-top: 2px solid #333;
+            margin: 0 30px;
+            padding-top: 10px;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        
+        .despacho-info {
+            background: #d1fae5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #10b981;
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado -->
+    <div class="header">
+        <h1>COMPROBANTE DE VENTA</h1>
+        <p><strong>Número:</strong> {{ venta.numero }}</p>
+        <p>{{ venta.fecha_creacion|date:"d/m/Y H:i" }}</p>
+    </div>
+
+    <!-- Información del Despacho -->
+    <div class="despacho-info">
+        <h3 style="margin: 0 0 10px 0; color: #065f46;">Información del Despacho</h3>
+        <p style="margin: 5px 0;"><strong>Despacho:</strong> {{ venta.despacho.numero }}</p>
+        <p style="margin: 5px 0;"><strong>Sucursal:</strong> {{ venta.despacho.sucursal.nombre_sucursal }}</p>
+    </div>
+
+    <!-- Información General -->
+    <div class="info-section">
+        <h2 style="border-bottom: 2px solid #10b981; padding-bottom: 5px;">Información General</h2>
+        
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-label">Estado:</div>
+                <div class="info-value">
+                    <span class="estado-badge estado-{{ venta.estado }}">
+                        {{ venta.get_estado_display }}
+                    </span>
+                </div>
+            </div>
+            {% if venta.tanda %}
+            <div class="info-row">
+                <div class="info-label">Tanda:</div>
+                <div class="info-value">{{ venta.tanda }}</div>
+            </div>
+            {% endif %}
+            {% if venta.chofer %}
+            <div class="info-row">
+                <div class="info-label">Chofer:</div>
+                <div class="info-value">{{ venta.chofer }}</div>
+            </div>
+            {% endif %}
+            <div class="info-row">
+                <div class="info-label">Usuario:</div>
+                <div class="info-value">{{ venta.usuario.username|default:"Sistema" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalle de Productos -->
+    <div class="info-section">
+        <h2 style="border-bottom: 2px solid #10b981; padding-bottom: 5px;">Detalle de Productos</h2>
+        
+        <table class="productos-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 45%;">Producto</th>
+                    <th style="width: 15%;" class="text-center">Cantidad</th>
+                    <th style="width: 15%;" class="text-right">Precio Unit.</th>
+                    <th style="width: 20%;" class="text-right">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in venta.detalles.all %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>
+                        <strong>{{ detalle.producto_venta.nombre }}</strong>
+                        {% if detalle.producto_venta.codigo %}
+                        <br><small style="color: #666;">Cód: {{ detalle.producto_venta.codigo }}</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ detalle.cantidad }}</td>
+                    <td class="text-right">Bs. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                    <td class="text-right"><strong>Bs. {{ detalle.subtotal|floatformat:2 }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Totales -->
+    <div class="totales">
+        <div class="totales-row">
+            <span>Subtotal:</span>
+            <strong>Bs. {{ venta.subtotal|floatformat:2 }}</strong>
+        </div>
+        {% if venta.descuento > 0 %}
+        <div class="totales-row" style="color: #dc3545;">
+            <span>Descuento:</span>
+            <strong>- Bs. {{ venta.descuento|floatformat:2 }}</strong>
+        </div>
+        {% endif %}
+        <div class="totales-row total">
+            <span>TOTAL:</span>
+            <span>Bs. {{ venta.total|floatformat:2 }}</span>
+        </div>
+    </div>
+
+    <!-- Firmas -->
+    <div style="clear: both;"></div>
+    <div class="firmas">
+        <div class="firma">
+            <div class="firma-linea">
+                <strong>Vendido por</strong><br>
+                <small>{{ venta.usuario.username|default:"Sistema" }}</small>
+            </div>
+        </div>
+        <div class="firma">
+            <div class="firma-linea">
+                <strong>Cliente</strong><br>
+                <small>{{ venta.despacho.sucursal.nombre_sucursal }}</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Documento generado el {{ "now"|date:"d/m/Y H:i" }}</p>
+        <p>Venta {{ venta.numero }} - Página 1 de 1</p>
+    </div>
+</body>
+</html>

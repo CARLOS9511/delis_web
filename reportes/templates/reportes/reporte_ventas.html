@@ -1,0 +1,139 @@
+<!-- reportes/templates/reportes/reporte_ventas.html -->
+{% extends 'base.html' %}
+
+{% block title %}Reporte de Ventas{% endblock %}
+
+{% block page_title %}📈 Reporte de Ventas{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📈 Reporte de Ventas</h2>
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn btn-success" onclick="window.print()">
+                🖨️ Imprimir
+            </button>
+            <a href="{% url 'reportes:dashboard' %}" class="btn btn-secondary">
+                ← Volver al Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <form method="GET" style="margin-bottom: 2rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Fecha Desde:</label>
+                <input type="date" name="fecha_desde" value="{{ request.GET.fecha_desde }}"
+                       style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Fecha Hasta:</label>
+                <input type="date" name="fecha_hasta" value="{{ request.GET.fecha_hasta }}"
+                       style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Estado:</label>
+                <select name="estado" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px;">
+                    <option value="">Todos</option>
+                    <option value="completada" {% if request.GET.estado == 'completada' %}selected{% endif %}>Completada</option>
+                    <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="cancelada" {% if request.GET.estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    🔍 Filtrar
+                </button>
+            </div>
+        </div>
+    </form>
+    
+    <!-- Resumen -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">Total Ventas</div>
+            <div style="font-size: 2rem; font-weight: 800; color: #1e293b;">{{ ventas.count }}</div>
+        </div>
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #10b981;">
+            <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">Total Facturado</div>
+            <div style="font-size: 2rem; font-weight: 800; color: #10b981;">
+                ${{ total_facturado|floatformat:2|default:"0.00" }}
+            </div>
+        </div>
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">Promedio por Venta</div>
+            <div style="font-size: 2rem; font-weight: 800; color: #f59e0b;">
+                ${{ promedio_venta|floatformat:2|default:"0.00" }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabla de Ventas -->
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 1rem; text-align: left;">Número</th>
+                    <th style="padding: 1rem; text-align: left;">Fecha</th>
+                    <th style="padding: 1rem; text-align: left;">Cliente</th>
+                    <th style="padding: 1rem; text-align: left;">Estado</th>
+                    <th style="padding: 1rem; text-align: right;">Subtotal</th>
+                    <th style="padding: 1rem; text-align: right;">Descuento</th>
+                    <th style="padding: 1rem; text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venta in ventas %}
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 1rem; font-weight: 600;">{{ venta.numero }}</td>
+                    <td style="padding: 1rem;">{{ venta.fecha|date:"d/m/Y H:i" }}</td>
+                    <td style="padding: 1rem;">{{ venta.cliente.nombre }}</td>
+                    <td style="padding: 1rem;">
+                        <span style="padding: 4px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600;
+                            {% if venta.estado == 'completada' %}background: #d1fae5; color: #065f46;
+                            {% elif venta.estado == 'pendiente' %}background: #fef3c7; color: #92400e;
+                            {% else %}background: #fee2e2; color: #991b1b;{% endif %}">
+                            {{ venta.get_estado_display }}
+                        </span>
+                    </td>
+                    <td style="padding: 1rem; text-align: right;">${{ venta.subtotal|floatformat:2 }}</td>
+                    <td style="padding: 1rem; text-align: right;">${{ venta.descuento|floatformat:2 }}</td>
+                    <td style="padding: 1rem; text-align: right; font-weight: 700; color: #667eea;">
+                        ${{ venta.total|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="padding: 3rem; text-align: center; color: #94a3b8;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                        <p>No hay ventas para mostrar</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0;">
+                    <td colspan="6" style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.1rem;">
+                        TOTAL:
+                    </td>
+                    <td style="padding: 1rem; text-align: right; font-weight: 800; font-size: 1.2rem; color: #667eea;">
+                        ${{ total_facturado|floatformat:2|default:"0.00" }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .btn, .navbar, .sidebar {
+            display: none !important;
+        }
+        .main-content {
+            margin-left: 0 !important;
+        }
+    }
+</style>
+{% endblock %}

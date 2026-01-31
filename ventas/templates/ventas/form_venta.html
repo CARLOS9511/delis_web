@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ accion }} Venta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detalle-row {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        border: 1px solid #dee2e6;
+    }
+    .detalle-row.to-delete {
+        opacity: 0.5;
+        background: #ffe6e6;
+    }
+    .subtotal-badge {
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .total-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+    }
+    .btn-filter {
+        transition: all 0.3s ease;
+    }
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .btn-filter.active {
+        font-weight: bold;
+    }
+    .categoria-column {
+        transition: opacity 0.3s ease;
+    }
+    .alert-despacho {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="fas fa-cash-register"></i> 
+                {{ accion }} Venta
+                {% if venta %}
+                    <span class="text-muted">{{ venta.numero }}</span>
+                {% endif %}
+            </h2>
+            <p class="text-muted mb-0">Complete los datos de la venta</p>
+        </div>
+        <a href="{% url 'ventas:venta_lista' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    {% if despacho_seleccionado %}
+    <div class="alert-despacho">
+        <h5><i class="fas fa-truck"></i> Despacho: {{ despacho_seleccionado.numero }}</h5>
+        <p class="mb-0">Sucursal: <strong>{{ despacho_seleccionado.sucursal.nombre_sucursal }}</strong></p>
+    </div>
+    {% endif %}
+
+    <form method="post" id="ventaForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Columna Principal -->
+            <div class="col-lg-8">
+                <!-- Información General -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Información General
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_despacho" class="form-label">{{ form.despacho.label }}</label>
+                                <select name="despacho" 
+                                        id="id_despacho" 
+                                        class="form-select" 
+                                        required
+                                        onchange="cargarProductosPorDespacho(this.value)">
+                                    <option value="">---------</option>
+                                    {% for despacho in despachos_disponibles %}
+                                        <option value="{{ despacho.id }}" 
+                                                {% if despacho_seleccionado and despacho.id == despacho_seleccionado.id %}selected{% endif %}>
+                                            {{ despacho.numero }} - {{ despacho.sucursal.nombre_sucursal }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.despacho.errors %}
+                                    <div class="text-danger small">{{ form.despacho.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Solo despachos completados</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.estado.label_tag }}
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                    <div class="text-danger small">{{ form.estado.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.tanda.label_tag }}
+                                {{ form.tanda }}
+                                {% if form.tanda.errors %}
+                                    <div class="text-danger small">{{ form.tanda.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.chofer.label_tag }}
+                                {{ form.chofer }}
+                                {% if form.chofer.errors %}
+                                    <div class="text-danger small">{{ form.chofer.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Productos -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-cart"></i> Productos para Venta
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+                        {% if not despacho_seleccionado %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Seleccione un despacho</strong> para cargar los productos disponibles en esa sucursal
+                        </div>
+                        {% elif not productos_por_categoria %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            No hay productos disponibles en la sucursal <strong>{{ despacho_seleccionado.sucursal.nombre_sucursal }}</strong>
+                        </div>
+                        {% else %}
+                        <!-- BOTONES DE FILTRO -->
+                        <div class="mb-4 d-flex gap-2">
+                            <button type="button" 
+                                    class="btn btn-primary btn-filter active" 
+                                    onclick="filtrarCategoria('todas')"
+                                    id="btn-todas">
+                                <i class="fas fa-th"></i> Todas
+                            </button>
+                            {% for categoria in productos_por_categoria.keys %}
+                                <button type="button" 
+                                        class="btn btn-outline-primary btn-filter" 
+                                        onclick="filtrarCategoria('{{ categoria }}')"
+                                        id="btn-{{ categoria }}">
+                                    {% if categoria == 'tortas' %}
+                                        <i class="fas fa-birthday-cake"></i>
+                                    {% elif categoria == 'Pasteles' %}
+                                        <i class="fas fa-cookie"></i>
+                                    {% else %}
+                                        <i class="fas fa-box"></i>
+                                    {% endif %}
+                                    {{ categoria|title }}
+                                </button>
+                            {% endfor %}
+                        </div>
+
+                        <!-- CONTENEDOR DE PRODUCTOS -->
+                        <div id="detalles-container">
+                            <div class="row">
+                                {% for categoria, productos in productos_por_categoria.items %}
+                                    <div class="col-md-6 mb-4 categoria-column" data-categoria="{{ categoria }}">
+                                        <div class="categoria-box">
+                                            <h6 class="bg-secondary text-white p-2 rounded mb-3">
+                                                {% if categoria == 'tortas' %}
+                                                    <i class="fas fa-birthday-cake"></i>
+                                                {% elif categoria == 'Pasteles' %}
+                                                    <i class="fas fa-cookie"></i>
+                                                {% else %}
+                                                    <i class="fas fa-box"></i>
+                                                {% endif %}
+                                                {{ categoria|title }}
+                                            </h6>
+                                            
+                                            {% for producto in productos %}
+                                                <div class="detalle-row mb-3" data-producto-id="{{ producto.id }}">
+                                                    <div class="row align-items-end">
+                                                        <!-- Producto -->
+                                                        <div class="col-md-12 mb-2">
+                                                            <label class="form-label fw-bold">{{ producto.nombre }}</label>
+                                                            <span class="badge bg-info float-end">Stock: {{ producto.stock }}</span>
+                                                            <input type="hidden"
+                                                                   name="detalles-{{ producto.indice }}-producto"
+                                                                   value="{{ producto.id }}">
+                                                        </div>
+
+                                                        <!-- Cantidad -->
+                                                        <div class="col-4">
+                                                            <label class="form-label small">Cantidad</label>
+                                                            <input type="number"
+                                                                   name="detalles-{{ producto.indice }}-cantidad"
+                                                                   class="form-control form-control-sm cantidad-input"
+                                                                   min="0"
+                                                                   max="{{ producto.stock }}"
+                                                                   value="{{ producto.cantidad_actual }}">
+                                                        </div>
+
+                                                        <!-- Precio -->
+                                                        <div class="col-4">
+                                                            <label class="form-label small">Precio Unit.</label>
+                                                            <input type="text"
+                                                                   name="detalles-{{ producto.indice }}-precio_unitario"
+                                                                   class="form-control form-control-sm precio-input"
+                                                                   value="{{ producto.precio_actual|floatformat:2 }}"
+                                                                   readonly>
+                                                        </div>
+
+                                                        <!-- Subtotal -->
+                                                        <div class="col-4">
+                                                            <label class="form-label small">Subtotal</label>
+                                                            <div class="subtotal-badge text-center">
+                                                                Bs. {{ producto.subtotal_actual|floatformat:2 }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- TOTAL FORMS -->
+                            <input type="hidden" 
+                                   id="id_detalles-TOTAL_FORMS" 
+                                   name="detalles-TOTAL_FORMS" 
+                                   value="{{ total_productos_count }}">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral - Resumen -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator"></i> Resumen
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="total-section">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Subtotal:</span>
+                                <strong id="subtotal-display">Bs. 0.00</strong>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.descuento.label_tag }}
+                                {{ form.descuento }}
+                                {% if form.descuento.errors %}
+                                    <div class="text-danger small">{{ form.descuento.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between">
+                                <h5 class="mb-0">Total:</h5>
+                                <h4 class="mb-0 text-primary" id="total-display">Bs. 0.00</h4>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success btn-lg w-100 mb-2">
+                                <i class="fas fa-save"></i> Guardar Venta
+                            </button>
+                            <a href="{% url 'ventas:venta_lista' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ==================== CARGAR PRODUCTOS AL CAMBIAR DESPACHO ====================
+function cargarProductosPorDespacho(despachoId) {
+    if (!despachoId) {
+        document.getElementById('detalles-container').innerHTML = 
+            '<div class="alert alert-info"><i class="fas fa-info-circle"></i> Seleccione un despacho para cargar productos</div>';
+        return;
+    }
+    
+    // Recargar la página con el despacho seleccionado
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('despacho_id', despachoId);
+    window.location.href = currentUrl.toString();
+}
+
+// ==================== FUNCIONES DE FILTRADO ====================
+function filtrarCategoria(categoria) {
+    console.log('Filtrando por:', categoria);
+    
+    // Actualizar botones activos
+    document.querySelectorAll('.btn-filter').forEach(btn => {
+        btn.classList.remove('active', 'btn-primary');
+        btn.classList.add('btn-outline-primary');
+    });
+    
+    const btnActivo = document.getElementById('btn-' + categoria);
+    if (btnActivo) {
+        btnActivo.classList.add('active', 'btn-primary');
+        btnActivo.classList.remove('btn-outline-primary');
+    }
+    
+    // Mostrar/ocultar columnas según categoría
+    const columnas = document.querySelectorAll('.categoria-column');
+    
+    if (categoria === 'todas') {
+        columnas.forEach(col => col.style.display = 'block');
+    } else {
+        columnas.forEach(col => {
+            col.style.display = (col.dataset.categoria === categoria) ? 'block' : 'none';
+        });
+    }
+    
+    // Recalcular totales
+    if (typeof calcular === 'function') {
+        calcular();
+    }
+}
+
+// ==================== FUNCIONES DE CÁLCULO ====================
+function parseBoliviano(valor) {
+    if (!valor) return 0;
+    return parseFloat(String(valor).replace(',', '.')) || 0;
+}
+
+function formatBoliviano(numero) {
+    return numero.toFixed(2).replace('.', ',');
+}
+
+function calcular() {
+    console.log('=== CALCULANDO ===');
+    let total = 0;
+    
+    document.querySelectorAll('.detalle-row').forEach((row, index) => {
+        const columnaParent = row.closest('.categoria-column');
+        if (row.style.display === 'none' || (columnaParent && columnaParent.style.display === 'none')) {
+            return;
+        }
+        
+        const cantInput = row.querySelector('.cantidad-input');
+        const precInput = row.querySelector('.precio-input');
+        const subtBadge = row.querySelector('.subtotal-badge');
+        
+        if (!cantInput || !precInput || !subtBadge) {
+            return;
+        }
+        
+        const cant = parseFloat(cantInput.value) || 0;
+        const prec = parseBoliviano(precInput.value);
+        const subt = cant * prec;
+        
+        subtBadge.textContent = 'Bs. ' + formatBoliviano(subt);
+        total += subt;
+    });
+    
+    const descInput = document.getElementById('id_descuento');
+    const desc = descInput ? (parseFloat(descInput.value) || 0) : 0;
+    
+    console.log('Subtotal:', total, '| Descuento:', desc, '| Total:', total - desc);
+    
+    document.getElementById('subtotal-display').textContent = 'Bs. ' + formatBoliviano(total);
+    document.getElementById('total-display').textContent = 'Bs. ' + formatBoliviano(total - desc);
+}
+
+// ==================== INICIALIZACIÓN ====================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando sistema de ventas...');
+    
+    // Inicializar filtro
+    filtrarCategoria('todas');
+    
+    const filas = document.querySelectorAll('.detalle-row');
+    console.log(`✓ Encontradas ${filas.length} filas de productos`);
+    
+    calcular();
+    
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        input.addEventListener('input', calcular);
+        input.addEventListener('change', calcular);
+    });
+    
+    const descuentoInput = document.getElementById('id_descuento');
+    if (descuentoInput) {
+        descuentoInput.addEventListener('input', calcular);
+        descuentoInput.addEventListener('change', calcular);
+    }
+    
+    console.log('✓ Sistema inicializado correctamente');
+});
+
+// ==================== VALIDACIÓN DE ENVÍO ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('ventaForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const detallesValidos = Array.from(document.querySelectorAll('.detalle-row'))
+                .filter(row => {
+                    const columna = row.closest('.categoria-column');
+                    return row.style.display !== 'none' && (!columna || columna.style.display !== 'none');
+                })
+                .some(row => {
+                    const cant = parseFloat(row.querySelector('.cantidad-input').value) || 0;
+                    return cant > 0;
+                });
+            
+            if (!detallesValidos) {
+                e.preventDefault();
+                alert('⚠️ Debe agregar al menos un producto con cantidad mayor a 0');
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

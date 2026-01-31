@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Pedido - Sistema{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pedidos-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .pedidos-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px 15px 0 0;
+        text-align: center;
+    }
+    
+    .info-section {
+        background: white;
+        padding: 20px;
+        border-left: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .productos-table {
+        background: white;
+        border: 1px solid #dee2e6;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .productos-table thead {
+        background-color: #f8b400;
+        color: white;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .productos-table th {
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #dee2e6;
+    }
+    
+    .productos-table td {
+        padding: 8px 12px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .productos-table tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .productos-table tbody tr:hover {
+        background-color: #e9ecef;
+    }
+    
+    .cantidad-input {
+        width: 100%;
+        padding: 6px 10px;
+        border: 2px solid #dee2e6;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    
+    .cantidad-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .cantidad-input.con-valor {
+        background-color: #d4edda;
+        border-color: #28a745;
+    }
+    
+    .btn-guardar {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 15px 40px;
+        font-size: 18px;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .btn-guardar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    
+    .btn-editar {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+        padding: 15px 40px;
+        font-size: 18px;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .btn-editar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    
+    .buttons-section {
+        background: white;
+        padding: 30px;
+        border-radius: 0 0 15px 15px;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        text-align: center;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="pedidos-container">
+        <form method="POST" id="pedidosForm">
+            {% csrf_token %}
+            
+            <!-- Header -->
+            <div class="pedidos-header">
+                <h2 class="mb-2">PEDIDOS PARA SUCURSAL {{ user.first_name }}"</h2>
+            </div>
+            
+            <!-- Información del pedido -->
+            <div class="info-section">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre usuario</label>
+                        <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha:</label>
+                        <input type="text" class="form-control" value="{{ fecha_actual }}" readonly>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Sucursal: <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" value="{{ user.first_name }}" readonly>
+                        <!-- Campo oculto para enviar el ID de la sucursal -->
+                        <input type="hidden" name="sucursal" value="{{ user_sucursal_id }}">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de productos -->
+            <div class="productos-table">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 70%;">PRODUCTOS</th>
+                            <th style="width: 30%; text-align: center;">CANTIDAD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr>
+                            <td>
+                                <strong>{{ producto.nombre|slice:"2:"  }}</strong>
+                                {% if producto.codigo %}
+                                    <br>
+                                    <small class="text-muted">Código: {{ producto.codigo }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <input 
+                                    type="number" 
+                                    name="cantidad_{{ producto.id }}" 
+                                    class="cantidad-input" 
+                                    min="0" 
+                                    value="0"
+                                    step="1"
+                                    data-producto-id="{{ producto.id }}"
+                                    id="input_{{ producto.id }}"
+                                >
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-danger">
+                                ⚠️ No hay productos disponibles
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Campo oculto para guardar datos JSON -->
+            <input type="hidden" name="datos_guardados" id="datosGuardados" value="">
+            
+<!-- Botones -->
+            <div class="buttons-section">
+                <button type="button" class="btn-editar me-2" onclick="window.location.href='{% url 'reportes:dashboard' %}'">
+                    <i class="bi bi-house"></i> DASHBOARD
+                </button>
+                <button type="button" class="btn-editar me-3" onclick="limpiarFormulario()">
+                    <i class="bi bi-pencil"></i> LIMPIAR
+                </button>
+                <button type="submit" class="btn-guardar" name="accion" value="guardar">
+                    <i class="bi bi-save"></i> GUARDAR
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Datos guardados desde el servidor (si existen)
+const datosServidor = {{ cantidades_productos|safe|default:'{}' }};
+
+// Restaurar datos al cargar la página
+window.addEventListener('load', function() {
+    // Restaurar cantidades
+    if (Object.keys(datosServidor).length > 0) {
+        for (let productoId in datosServidor) {
+            const input = document.getElementById('input_' + productoId);
+            if (input) {
+                input.value = datosServidor[productoId];
+                if (parseInt(input.value) > 0) {
+                    input.classList.add('con-valor');
+                }
+            }
+        }
+    }
+    
+    // Auto-focus en el primer input
+    const primerInput = document.querySelector('.cantidad-input');
+    if (primerInput && Object.keys(datosServidor).length === 0) {
+        primerInput.focus();
+        primerInput.select();
+    }
+});
+
+// Limpiar formulario
+function limpiarFormulario() {
+    if (confirm('¿Está seguro de limpiar todos los campos?')) {
+        // Limpiar cantidades
+        document.querySelectorAll('.cantidad-input').forEach(input => {
+            input.value = 0;
+            input.classList.remove('con-valor');
+        });
+        
+        // Recargar la página para limpiar datos del servidor
+        window.location.href = window.location.pathname;
+    }
+}
+
+// Validar formulario antes de enviar
+document.getElementById('pedidosForm').addEventListener('submit', function(e) {
+    // Verificar si hay al menos un producto con cantidad mayor a 0
+    const inputs = document.querySelectorAll('.cantidad-input');
+    let hayProductos = false;
+    let datosGuardar = {};
+    
+    inputs.forEach(input => {
+        const cantidad = parseInt(input.value);
+        if (cantidad > 0) {
+            hayProductos = true;
+            const productoId = input.getAttribute('data-producto-id');
+            datosGuardar[productoId] = cantidad;
+        }
+    });
+    
+    if (!hayProductos) {
+        e.preventDefault();
+        alert('Debe ingresar al menos un producto con cantidad mayor a 0');
+        return;
+    }
+    
+    // Guardar datos en campo oculto
+    document.getElementById('datosGuardados').value = JSON.stringify(datosGuardar);
+});
+
+// Resaltar inputs con valores
+document.querySelectorAll('.cantidad-input').forEach(input => {
+    input.addEventListener('input', function() {
+        if (parseInt(this.value) > 0) {
+            this.classList.add('con-valor');
+        } else {
+            this.classList.remove('con-valor');
+        }
+    });
+    
+    // Navegación con Enter
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const inputs = Array.from(document.querySelectorAll('.cantidad-input'));
+            const currentIndex = inputs.indexOf(this);
+            const nextIndex = currentIndex + 1;
+            if (nextIndex < inputs.length) {
+                inputs[nextIndex].focus();
+                inputs[nextIndex].select();
+            } else {
+                // Si es el último input, focus en el botón guardar
+                document.querySelector('.btn-guardar').focus();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

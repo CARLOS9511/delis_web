@@ -1,0 +1,67 @@
+<!-- inventario/templates/inventario/lista_productos.html -->
+{% extends 'base.html' %}
+
+{% block title %}Productos - Inventario{% endblock %}
+
+{% block page_title %}📦 Productos{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Lista de Productos</h2>
+        <a href="/admin/inventario/producto/add/" class="btn btn-primary">
+            ➕ Nuevo Producto
+        </a>
+    </div>
+    
+    <!-- Búsqueda -->
+    <form method="GET" style="margin-bottom: 2rem;">
+        <div style="display: flex; gap: 1rem;">
+            <input type="text" name="buscar" placeholder="🔍 Buscar producto..." 
+                   value="{{ request.GET.buscar }}"
+                   style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+            <select name="categoria" style="padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                <option value="">Todas las categorías</option>
+                {% for cat in categorias %}
+                <option value="{{ cat.id }}" {% if request.GET.categoria == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
+    
+    <!-- Lista de productos -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+        {% for producto in productos %}
+        <div style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">{{ producto.nombre }}</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 0.5rem;">{{ producto.codigo }}</p>
+            
+            <div style="font-size: 1.8rem; color: #667eea; font-weight: 700; margin: 1rem 0;">
+                ${{ producto.precio_venta }}
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <span style="padding: 4px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600;
+                    {% if producto.stock > producto.stock_minimo %}background: #d1fae5; color: #065f46;
+                    {% elif producto.stock > 0 %}background: #fef3c7; color: #92400e;
+                    {% else %}background: #fee2e2; color: #991b1b;{% endif %}">
+                    Stock: {{ producto.stock }}
+                </span>
+            </div>
+            
+            <a href="{% url 'inventario:detalle' producto.id %}" class="btn btn-primary" style="width: 100%;">
+                Ver Detalle
+            </a>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #94a3b8;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+            <p>No hay productos disponibles</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

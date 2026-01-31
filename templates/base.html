@@ -1,0 +1,499 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema Deli's{% endblock %}</title>
+    
+    {% load static %}
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 260px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+        
+        .menu-section {
+            margin-bottom: 2rem;
+        }
+        
+        .menu-section-title {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+        }
+        
+        .menu-item {
+            display: block;
+            padding: 0.75rem 1.5rem;
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .menu-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: white;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .menu-icon {
+            font-size: 1.25rem;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+        
+        /* Topbar */
+        .topbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .topbar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+        
+        /* Container */
+        .container {
+            padding: 2rem;
+        }
+        
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+        
+.btn-secondary:hover {
+            background: #475569;
+        }
+        
+        .btn-logout {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        
+        .btn-logout:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-logout:active {
+            transform: translateY(0);
+        }
+        
+        .logout-section {
+            margin-left: 1.5rem;
+        }
+        
+        /* Messages */
+        .messages {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+        
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'reportes:dashboard' %}" class="sidebar-brand">
+                🏢 Sistema Deli's
+            </a>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <!-- Dashboard -->
+            <div class="menu-section">
+                <div class="menu-section-title">Principal</div>
+                <a href="{% url 'reportes:dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span class="menu-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            
+            <!-- Sucursales -->
+             {% if request.user.groups.all.0.name != 'vendedores' %}
+            <div class="menu-section">
+                <div class="menu-section-title">Sucursales</div>
+                <a href="{% url 'sucursales:lista' %}" class="menu-item {% if 'sucursales' in request.path %}active{% endif %}">
+                    <span class="menu-icon">👥</span>
+                    <span>Lista de Sucursales</span>
+                </a>
+            </div>
+            
+<!-- Producción -->
+            
+            <div class="menu-section">
+                <div class="menu-section-title">Producción</div>
+                <a href="{% url 'produccion:lista' %}" class="menu-item {% if 'produccion' in request.path %}active{% endif %}">
+                    <span class="menu-icon">🏭</span>
+                    <span>Productos</span>
+                </a>
+                <a href="{% url 'produccion:categorias' %}" class="menu-item">
+                    <span class="menu-icon">🗂️</span>
+                    <span>Categorías</span>
+                </a>
+            </div>
+            {% endif %}
+<!-- Despacho -->
+            <div class="menu-section">
+                <div class="menu-section-title">Despacho</div>
+                {% if request.user.groups.all.0.name == 'vendedores' %}
+                    <!-- Solo usuarios del grupo vendedores ven Pedidos y Saldos -->
+                    <a href="{% url 'despacho:crear_pedido' %}" class="menu-item {% if 'pedido' in request.path %}active{% endif %}">
+                        <span class="menu-icon">📋</span>
+                        <span>Pedidos</span>
+                    </a>
+                    <a href="{% url 'despacho:crear_saldo' %}" class="menu-item {% if 'saldo' in request.path %}active{% endif %}">
+                        <span class="menu-icon">📊</span>
+                        <span>Saldos</span>
+                    </a>
+                {% else %}
+                    <!-- Usuarios administradores ven todo -->
+                    <a href="{% url 'despacho:despacho_lista' %}" class="menu-item {% if 'despacho' in request.path %}active{% endif %}">
+                        <span class="menu-icon">🚚</span>
+                        <span>Despacho</span>
+                    </a>
+                    <a href="{% url 'despacho:lista_pedidos' %}" class="menu-item {% if 'despacho' in request.path %}active{% endif %}">
+                        <span class="menu-icon">🚚</span>
+                        <span>Lista Pedidos</span>
+                    </a>
+                    <a href="{% url 'despacho:crear_pedido' %}" class="menu-item {% if 'pedido' in request.path %}active{% endif %}">
+                        <span class="menu-icon">📋</span>
+                        <span>Pedidos</span>
+                    </a>
+                    <a href="{% url 'despacho:crear_saldo' %}" class="menu-item {% if 'saldo' in request.path %}active{% endif %}">
+                        <span class="menu-icon">📊</span>
+                        <span>Saldos</span>
+                    </a>
+                {% endif %}
+            </div>
+
+<!-- Inventario -->
+            {% if request.user.groups.all.0.name != 'vendedores' %}
+            <div class="menu-section">
+                <div class="menu-section-title">Inventario</div>
+                <a href="{% url 'inventario:lista' %}" class="menu-item {% if 'inventario' in request.path %}active{% endif %}">
+                    <span class="menu-icon">📦</span>
+                    <span>Productos</span>
+                </a>
+                <a href="{% url 'inventario:categorias' %}" class="menu-item">
+                    <span class="menu-icon">🗂️</span>
+                    <span>Categorías</span>
+                </a>
+            </div>
+             
+            <!-- Ventas -->
+            <div class="menu-section">
+                <div class="menu-section-title">Ventas</div>
+                <a href="{% url 'ventas:venta_lista' %}" class="menu-item">
+                    <span class="menu-icon">➕</span>
+                    <span>Lsta Despacho</span>
+                </a>
+                <a href="{% url 'ventas:venta_lista' %}" class="menu-item {% if 'ventas' in request.path %}active{% endif %}">
+                    <span class="menu-icon">💰</span>
+                    <span>Historial Ventas</span>
+                </a>
+            </div>
+            
+            
+            <!-- Reportes -->
+            <div class="menu-section">
+                <div class="menu-section-title">Reportes</div>
+                <a href="{% url 'reportes:despachos' %}" class="menu-item">
+                    <span class="menu-icon">📈</span>
+                    <span>Reporte Despachos</span>
+                </a>
+                <a href="{% url 'reportes:ventas' %}" class="menu-item">
+                    <span class="menu-icon">📈</span>
+                    <span>Reporte Ventas</span>
+                </a>
+                <a href="{% url 'reportes:inventario' %}" class="menu-item">
+                    <span class="menu-icon">📋</span>
+                    <span>Reporte Inventario</span>
+                </a>
+            </div>
+            
+            <!-- Admin -->
+            <div class="menu-section">
+                <div class="menu-section-title">Sistema</div>
+                <a href="/admin/" class="menu-item" target="_blank">
+                    <span class="menu-icon">⚙️</span>
+                    <span>Admin Django</span>
+                </a>
+            </div>
+            {% endif %}
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Topbar -->
+        <div class="topbar">
+            <h1 class="topbar-title">{% block page_title %}Sistema Deli's{% endblock %}</h1>
+<div class="topbar-actions">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ request.user.username|first|upper }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">{{ request.user.username }}</div>
+                        <div style="font-size: 0.85rem; color: #64748b;">{{ request.user.email }}</div>
+                    </div>
+                </div>
+                
+                <!-- Botón para cerrar sesión -->
+                <div class="logout-section">
+                    <form action="{% url 'logout' %}" method="POST" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-logout" onclick="return confirm('¿Estás seguro de que deseas cerrar sesión?')">
+                            <span style="margin-right: 0.5rem;">🚪</span>
+                            Cerrar Sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Container -->
+        <div class="container">
+            <!-- Messages -->
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li class="alert alert-{{ message.tags }}">
+                    <span>
+                        {% if message.tags == 'success' %}✅{% endif %}
+                        {% if message.tags == 'error' %}❌{% endif %}
+                        {% if message.tags == 'warning' %}⚠️{% endif %}
+                        {% if message.tags == 'info' %}ℹ️{% endif %}
+                    </span>
+                    {{ message }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            
+            <!-- Content -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

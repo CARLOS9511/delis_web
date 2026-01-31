@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Saldos - Sistema{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0"><i class="bi bi-wallet2"></i> Saldos de Sucursales</h2>
+            <p class="text-muted mb-0">Gestión de saldos por sucursal</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{% url 'reportes:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house"></i> Volver al Dashboard
+            </a>
+            <a href="{% url 'despacho:despacho_lista' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Volver a Despachos
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded p-3">
+                                <i class="bi bi-wallet2 text-warning fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Saldos</h6>
+                            <h3 class="mb-0">{{ stats.total_saldos }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 rounded p-3">
+                                <i class="bi bi-building text-success fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Sucursales</h6>
+                            <h3 class="mb-0">{{ stats.total_sucursales }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 rounded p-3">
+                                <i class="bi bi-box-seam text-info fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Cantidad Total</h6>
+                            <h3 class="mb-0">{{ stats.total_cantidad }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="buscar" class="form-control" 
+                           placeholder="Buscar sucursal o producto..." 
+                           value="{{ request.GET.buscar }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="sucursal" class="form-select">
+                        <option value="">Todas las sucursales</option>
+                        {% for sucursal in sucursales %}
+                            <option value="{{ sucursal.id }}" 
+                                {% if request.GET.sucursal == sucursal.id|stringformat:"s" %}selected{% endif %}>
+                                {{ sucursal.nombre_sucursal }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="fecha_desde" class="form-control" 
+                           placeholder="Desde" value="{{ request.GET.fecha_desde }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="fecha_hasta" class="form-control" 
+                           placeholder="Hasta" value="{{ request.GET.fecha_hasta }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Saldos Agrupados -->
+    {% if saldos_agrupados %}
+        {% for sucursal_nombre, datos in saldos_agrupados.items %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-warning bg-opacity-10 border-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-building"></i> {{ sucursal_nombre }}
+                    </h5>
+                    <span class="badge bg-warning">
+                        Total: {{ datos.total_cantidad }} unidades
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th>Usuario</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for saldo in datos.saldos %}
+                            <tr>
+                                <td>
+                                    <strong>{{ saldo.producto.nombre }}</strong>
+                                    {% if saldo.producto.codigo_producto %}
+                                        <br>
+                                        <small class="text-muted">Código: {{ saldo.producto.codigo_producto }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning">{{ saldo.cantidad }}</span>
+                                </td>
+                                <td>
+                                    {% if saldo.usuario %}
+                                        {{ saldo.usuario.username }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ saldo.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No se encontraron saldos.
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+</style>
+{% endblock %}

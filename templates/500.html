@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error del Servidor - 500</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 600px;
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: bold;
+            color: #f5576c;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0px rgba(245, 87, 108, 0.2);
+            animation: shake 2s infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-5px);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translateX(5px);
+            }
+        }
+        
+        .emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        
+        p {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 35px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-home {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+        
+        .btn-home:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.6);
+        }
+        
+        .btn-reload {
+            background: white;
+            color: #f5576c;
+            border: 2px solid #f5576c;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-reload:hover {
+            background: #f5576c;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .info-box {
+            margin-top: 40px;
+            text-align: left;
+            background: #fff5f5;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #f5576c;
+        }
+        
+        .info-box h3 {
+            color: #f5576c;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info-box li {
+            color: #555;
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .info-box li:before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+            font-size: 14px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #ffe5e5;
+            border-radius: 20px;
+            color: #f5576c;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 600px) {
+            .error-code {
+                font-size: 80px;
+            }
+            
+            .emoji {
+                font-size: 60px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            p {
+                font-size: 16px;
+            }
+            
+            .container {
+                padding: 40px 20px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">⚙️</div>
+        <div class="error-code">500</div>
+        <h1>¡No hay conexion en el servidor para este MODULO!</h1>
+        <p>Lo sentimos, Todavia no hay codigo para este modulo.</p>
+        
+        <div class="status-indicator">
+            🔧 Trabajando en ello...
+        </div>
+        
+        <div class="buttons">
+            <a href="javascript:location.reload()" class="btn btn-reload">🔄 Recargar página</a>
+            <a href="/" class="btn btn-home">🏠 Volver al inicio</a>
+        </div>
+        
+        <div class="info-box">
+            <h3>¿Qué puedes hacer mientras tanto?</h3>
+            <ul>
+                <li>Verifica tu conexión a internet</li>
+                <li>Regresa a la página de inicio</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

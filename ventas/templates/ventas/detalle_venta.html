@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Venta {{ venta.numero }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .badge-estado {
+        font-size: 1rem;
+        padding: 8px 15px;
+    }
+    .producto-row:hover {
+        background: #f8f9fa;
+    }
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+    }
+
+    /* Líneas horizontales */
+    .tabla-zebra tbody tr {
+        border-bottom: 2px solid #10b981;
+    }
+
+    /* Primer borde superior */
+    .tabla-zebra tbody tr:first-child {
+        border-top: 2px solid #059669;
+    }
+
+    /* Sombreado intercalado */
+    .tabla-zebra tbody tr:nth-child(odd) {
+        background-color: #d1fae5;
+    }
+
+    .tabla-zebra tbody tr:nth-child(even) {
+        background-color: #ffffff;
+    }
+
+    /* Hover */
+    .tabla-zebra tbody tr:hover {
+        background-color: #a7f3d0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h2>
+                <i class="fas fa-cash-register"></i> 
+                Venta {{ venta.numero }}
+            </h2>
+            <p class="text-muted mb-0">Detalle completo de la venta</p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'ventas:venta_lista' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            {% if venta.estado == 'pendiente' %}
+                <a href="{% url 'ventas:venta_editar' venta.id %}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <button class="btn btn-success" onclick="completarVenta()">
+                    <i class="fas fa-check"></i> Completar
+                </button>
+            {% endif %}
+            <a href="{% url 'ventas:venta_pdf' venta.id %}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <!-- Estado y Datos Generales -->
+            <div class="info-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Información General</h4>
+                    <span class="badge badge-{{ venta.estado }} badge-estado">
+                        {{ venta.get_estado_display }}
+                    </span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="text-muted">Número de Venta:</span>
+                    <strong>{{ venta.numero }}</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Despacho Origen:</span>
+                    <strong>
+                        <i class="fas fa-truck text-primary"></i>
+                        {{ venta.despacho.numero }}
+                    </strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Sucursal:</span>
+                    <strong>
+                        <i class="fas fa-store text-success"></i>
+                        {{ venta.despacho.sucursal.nombre_sucursal }}
+                    </strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Fecha de Creación:</span>
+                    <strong>{{ venta.fecha_creacion|date:"d/m/Y H:i" }}</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Usuario:</span>
+                    <strong>{{ venta.usuario.username|default:"Sistema" }}</strong>
+                </div>
+                {% if venta.tanda %}
+                <div class="info-row">
+                    <span class="text-muted">Tanda:</span>
+                    <strong>{{ venta.tanda }}</strong>
+                </div>
+                {% endif %}
+                {% if venta.chofer %}
+                <div class="info-row">
+                    <span class="text-muted">Chofer:</span>
+                    <strong>{{ venta.chofer }}</strong>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Productos de la Venta -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shopping-cart"></i> 
+                        Productos ({{ venta.detalles.count }})
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 tabla-zebra">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in venta.detalles.all %}
+                                <tr class="producto-row">
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <strong>{{ detalle.producto_venta.nombre }}</strong>
+                                        {% if detalle.producto_venta.codigo %}
+                                        <br>
+                                        <small class="text-muted">Cód: {{ detalle.producto_venta.codigo }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ detalle.cantidad }}</span>
+                                    </td>
+                                    <td class="text-end">Bs. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">
+                                        <strong>Bs. {{ detalle.subtotal|floatformat:2 }}</strong>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        No hay productos en esta venta
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen Financiero -->
+        <div class="col-lg-4">
+            <div class="info-card sticky-top" style="top: 20px;">
+                <h4 class="mb-4">Resumen Financiero</h4>
+                
+                <div class="info-row">
+                    <span class="text-muted">Subtotal:</span>
+                    <strong>Bs. {{ venta.subtotal|floatformat:2 }}</strong>
+                </div>
+                
+                {% if venta.descuento > 0 %}
+                <div class="info-row text-danger">
+                    <span>Descuento:</span>
+                    <strong>- Bs. {{ venta.descuento|floatformat:2 }}</strong>
+                </div>
+                {% endif %}
+                
+                <hr class="my-3">
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Total:</h5>
+                    <h3 class="mb-0 text-success">
+                        Bs. {{ venta.total|floatformat:2 }}
+                    </h3>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="mt-4 pt-4 border-top">
+                    <h6 class="text-muted mb-3">Información Adicional</h6>
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Productos:</span>
+                            <strong>{{ venta.detalles.count }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones rápidas -->
+                {% if venta.estado == 'pendiente' %}
+                <div class="mt-4 no-print">
+                    <form method="post" action="{% url 'ventas:venta_completar' venta.id %}" class="mb-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check-circle"></i> Marcar como Completada
+                        </button>
+                    </form>
+                    <button class="btn btn-outline-danger w-100" onclick="confirmarCancelacion()">
+                        <i class="fas fa-times-circle"></i> Cancelar Venta
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalCancelar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Cancelar Venta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea cancelar la venta <strong>{{ venta.numero }}</strong>?</p>
+                <p class="text-muted mb-0">Esta acción restaurará el stock de productos.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, volver</button>
+                <form method="post" action="{% url 'ventas:venta_cancelar' venta.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sí, cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal completar -->
+<div class="modal fade" id="modalCompletar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Completar Venta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Confirma que la venta <strong>{{ venta.numero }}</strong> ha sido completada?</p>
+                <p class="text-muted mb-0">Se marcará como finalizada.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'ventas:venta_completar' venta.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Completar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarCancelacion() {
+    const modal = new bootstrap.Modal(document.getElementById('modalCancelar'));
+    modal.show();
+}
+
+function completarVenta() {
+    const modal = new bootstrap.Modal(document.getElementById('modalCompletar'));
+    modal.show();
+}
+</script>
+{% endblock %}
